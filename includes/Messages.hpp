@@ -76,3 +76,5 @@ class Messages
         //invalid key error used by MODE +k
         void ERR_INVALIDKEY(const std::string& channel);
     };
+
+#endif
