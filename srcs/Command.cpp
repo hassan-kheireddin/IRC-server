@@ -17,7 +17,6 @@ void Command::executeCommand(const string& commandLine, Client& client, Server& 
     string command = tokens[0];
     vector<string> params(tokens.begin() + 1, tokens.end());
 
-    // Map commands to their corresponding functions
     if (command == "PASS") {
         PASS(params, client, server);
     } else if (command == "NICK") {
@@ -236,5 +235,131 @@ static void Command::JOIN(const vector<string>& params, Client& client, Server& 
 }
 
 static void Command::KICK(const vector<string>& params, Client& client, Server& server) {
-    // Implementation of KICK command
+    if (params.size() < 3)
+    {
+        Messages::ERR_NEEDMOREPARAMS("KICK");
+        return;
+    }
+    string channelName = params[0];
+    string targetNickname = params[1];
+    string comment = params[2];
+
+    Channel* channel = server.getChannel(channelName);
+    if (!channel) {
+        Messages::ERR_NOSUCHCHANNEL(channelName);
+        return;
+
+    }
+    if (!channel->isOperator(client.getNickname())) {
+        Messages::ERR_CHANOPRIVSNEEDED(channelName);
+        return;
+    }
+    Client* targetClient = server.getClientByNickname(targetNickname);
+
+    if (!targetClient || !channel->hasClient(targetNickname)) {
+        Messages::ERR_USERNOTINCHANNEL(targetNickname, channelName);
+        return;
+    }
+
+    channel->removeClient(targetNickname);
+    
+    string kickMsg = ":" + client.getNickname() + " KICK " + channelName + " " + targetNickname + " :" + comment + "\r\n";
+    for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
+        send((*it)->getFd(), kickMsg.c_str(), kickMsg.length(), 0);
+    }
+}
+
+
+static void Command::INVITE(const vector<string>& params, Client& client, Server& server) {
+    if (params.size() < 2)
+    {
+        Messages::ERR_NEEDMOREPARAMS("INVITE");
+        return;
+    }
+    string targetNickname = params[0];
+    string channelName = params[1];
+
+    Channel* channel = server.getChannel(channelName);
+    if (!channel) {
+        Messages::ERR_NOSUCHCHANNEL(channelName);
+        return;
+    }
+    if (!channel->isOperator(client.getNickname())) {
+        Messages::ERR_CHANOPRIVSNEEDED(channelName);
+        return;
+    }
+    Client* targetClient = server.getClientByNickname(targetNickname);
+    if (!targetClient) {
+        Messages::ERR_NOSUCHNICK(targetNickname);
+        return;
+    }
+
+    if (channel->hasClient(targetNickname)) {
+        Messages::ERR_USERONCHANNEL(targetNickname, channelName);
+        return;
+    }
+
+    if (channel->hasInvitation(targetNickname)) {
+        Messages::ERR_USERONCHANNEL(targetNickname, channelName);
+        return;
+    }
+
+    channel->addInvitation(targetNickname);
+
+    string inviteMsg = ":" + client.getNickname() + " INVITE " + targetNickname + " :" + channelName + "\r\n";
+    send(targetClient->getFd(), inviteMsg.c_str(), inviteMsg.length(), 0);
+}
+
+static void Command::TOPIC(const vector<string>& params, Client& client, Server& server) {
+    if (params.size() < 2)
+    {
+        Messages::ERR_NEEDMOREPARAMS("TOPIC");
+        return;
+    }
+
+    string channelName = params[0];
+
+    Channel* channel = server.getChannel(channelName);
+    if (!channel) {
+        Messages::ERR_NOSUCHCHANNEL(channelName);
+        return;
+    }
+
+    if (!channel->hasClient(client.getNickname())) {
+        Messages::ERR_NOTONCHANNEL(channelName);
+        return;
+    }
+
+    if (channel->hasMode('t') && !channel->isOperator(client)) {
+            std::string error = ":ircserv 482 " + channelName + " :You're not a channel operator\r\n";
+            send(client.getFd(), error.c_str(), error.length(), 0);
+            return;
+        }
+
+        // Combine topic text
+        std::string newTopic;
+        for (size_t i = 2; i < args.size(); ++i) {
+            if (i == 2 && args[i][0] == ':')
+                newTopic = args[i].substr(1);
+            else
+                newTopic += " " + args[i];
+        }
+
+        channel->setTopic(newTopic);
+
+        std::string topicMsg = ":" + client.getNickname() + " TOPIC " + channelName + " :" + newTopic + "\r\n";
+        for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
+            send((*it)->getFd(), topicMsg.c_str(), topicMsg.length(), 0);
+    }
+
+    //  VIEW TOPIC
+    else {
+        if (!channel->getTopic().empty()) {
+            std::string topic = ":ircserv 332 " + client.getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
+            send(client.getFd(), topic.c_str(), topic.length(), 0);
+        } else {
+            std::string notopic = ":ircserv 331 " + client.getNickname() + " " + channelName + " :No topic is set\r\n";
+            send(client.getFd(), notopic.c_str(), notopic.length(), 0);
+        }
+    }
 }
