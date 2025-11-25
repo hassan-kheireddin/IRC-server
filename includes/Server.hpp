@@ -3,35 +3,33 @@
 
 #include <string>
 #include <vector>
-#include <iostream>
 #include <map>
-#include <poll.h>
+#include <poll.h> // for poll()
+#include <cstring> // for memset
+#include <unistd.h> // for close()
+#include <fcntl.h> // File control definitions
+#include <netinet/in.h> // Internet address family
+#include <sys/socket.h> // Socket definitions
+#include <arpa/inet.h> // Internet operations definitions
+#include "Command.hpp"
 #include "Messages.hpp"
 #include "Clients.hpp"
 #include "Channel.hpp"
-#include <cstring>
-#include <unistd.h>
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include "Command.hpp"
 
 using namespace std;
 
 class Server
 {
     private:
-        int _port;
-        string _password;
-        int _serverSocket;
-        vector<pollfd> _pollFds;
-        map<int, Clients*> _Clients;
-        map<string, Channel*> _channels;
-        Messages _messages;
-        map<string, Clients*> _registeredNicknames;
+        int _port; // Server listening port
+        string _password; // Server password
+        int _serverSocket; // Server socket file descriptor
+        vector<pollfd> _pollFds; // Poll file descriptors || This vector tracks ALL file descriptors the server needs to monitor (server socket + all client sockets)
+        map<string, Channel*> _channels;// channel name → Channel object
+        map<int, Clients*> _clients; // socket FD → Client object
+        map<string, Clients*> _registeredNicknames; // nickname → Client object
 
-        void setupServerSocket();
+        void setupServerSocket(); 
         void acceptNewConnection();
         void handleClientData(int ClientSocket);
 
@@ -45,7 +43,7 @@ class Server
 
         const string& getPassword() const;
         Channel* createOrGetChannel(const string& channelName);
-        const map<string, Channel*>& getClient() const;
+        const map<int, Clients*>& getClients() const;
         Clients* getClientByNickname(const string& nickname) const;
         
 };

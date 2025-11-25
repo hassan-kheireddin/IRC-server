@@ -6,9 +6,9 @@ void Messages::RPL_WELCOME(const string& user)
     cout << "Welcome to the server, " << user << "!" << endl;
 }
 
-void Messages::RPL_CREATED(const string& date)
+void Messages::RPL_CREATED(const string& message)
 {
-    cout << "Server created"<< endl;
+    cout << message << endl;
 }
 
 void Messages::ERR_NEEDMOREPARAMS(const string& command)
