@@ -10,15 +10,15 @@ class Messages
 {
     public:
     //welcome and server creation messages
-        void RPL_WELCOME(const string& user);
+        void RPL_WELCOME(const string& client);
         void RPL_CREATED(const string& message);
 
-    //no enough parameters error used by PASS, USER, JOIN, TOPIC, INVITE, PRIVMSG, Kick.
+    //no enough parameters error used by PASS, NICK, JOIN, TOPIC, INVITE, PRIVMSG, Kick.
         void ERR_NEEDMOREPARAMS(const string& command);
     //already registered error used by PASS.
-        void ERR_ALREADYREGISTRED(const string& user);
+        void ERR_ALREADYREGISTRED(const string& client);
     //password mismatch error used by PASS.
-        void ERR_PASSWDMISMATCH(const string& user);
+        void ERR_PASSWDMISMATCH();
 
     //no nickname given error used by NICK.
         void ERR_NONICKNAMEGIVEN();
@@ -46,12 +46,12 @@ class Messages
         void RPL_NOTOPIC(const string& channel);
     
     //invite message used by INVITE.
-        void RPL_INVITING(const string& channel, const string& user);
-    //user on channel error used by INVITE.
-        void ERR_USERONCHANNEL(const string& user, const string& channel);
+        void RPL_INVITING(const string& channel, const string& client);
+    //client on channel error used by INVITE.
+        void ERR_clientONCHANNEL(const string& client, const string& channel);
     
-    //user not in channel error used by KICK.
-        void ERR_USERNOTINCHANNEL(const string& user, const string& channel);
+    //client not in channel error used by KICK.
+        void ERR_clientNOTINCHANNEL(const string& client, const string& channel);
 
     //no such nick error used by PRIVMSG, MODE.
         void ERR_NOSUCHNICK(const string& nickname);
@@ -66,15 +66,17 @@ class Messages
 
     //unknown mode flag error used by MODE.
         void ERR_UMODEUNKNOWNFLAG(const string& flag);
-    //users don't match error used by MODE.
-        void ERR_USERSDONTMATCH();
-    //user mode is message used by MODE.
-        void RPL_UMODEIS(const string& user, const string& mode);
+    //clients don't match error used by MODE.
+        void ERR_clientSDONTMATCH();
+    //client mode is message used by MODE.
+        void RPL_UMODEIS(const string& client, const string& mode);
     //channel mode is message used by MODE.
         void RPL_CHANMODEIS(const string& channel, const string& mode);
     
         //invalid key error used by MODE +k
         void ERR_INVALIDKEY(const string& channel);
+
+        void ERR_UNKNOWNCOMMAND(const string& command);
     };
 
 #endif

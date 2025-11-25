@@ -1,6 +1,7 @@
 #include "../includes/Client.hpp"
+using namespace std;
 
-Client::Client(int socketFd, const string& ipAddr) : _socketFd(socketFd), _ipAddr(ipAddr), _isRegistered(false), _isAuthenticated(false){}
+Client::Client(int socketFd, const string& ipAddr) : _socketFd(socketFd), _ipAddr(ipAddr), _isRegistered(false), _isAuthenticated(false), _hasSentPass(false), _hasSentNick(false), _hasSentUser(false) {}
 
 Client::~Client() {}
 
@@ -19,6 +20,11 @@ const string& Client::getUname() const
     return _username;
 }
 
+const string& Client::getRname() const
+{
+    return _realname;
+}
+
 bool Client::isReg() const
 {
     return _isRegistered;
@@ -29,6 +35,21 @@ bool Client::isAuth() const
     return _isAuthenticated;
 }
 
+void Client::HasSentPass(bool status)
+{
+    _hasSentPass = status;
+}
+
+void Client::HasSentNick(bool status)
+{
+    _hasSentNick = status;
+}
+
+void Client::HasSentUser(bool status)
+{
+    _hasSentUser = status;
+}
+
 void Client::setNname(const string& nickname)
 {
     _nickname = nickname;
@@ -37,6 +58,11 @@ void Client::setNname(const string& nickname)
 void Client::setUname(const string& username)
 {
     _username = username;
+}
+
+void Client::setRname(const string& realname)
+{
+    _realname = realname;
 }
 
 void Client::setReg(bool status)

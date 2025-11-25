@@ -1,9 +1,9 @@
 #include "../includes/Messages.hpp"
 using namespace std;
 
-void Messages::RPL_WELCOME(const string& user)
+void Messages::RPL_WELCOME(const string& client)
 {
-    cout << "Welcome to the server, " << user << "!" << endl;
+    cout << client << ", Welcome to the server! If you want to Join Channels you must be authenticated." << endl;
 }
 
 void Messages::RPL_CREATED(const string& message)
@@ -11,19 +11,24 @@ void Messages::RPL_CREATED(const string& message)
     cout << message << endl;
 }
 
+void Messages::ERR_UNKNOWNCOMMAND()
+{
+    cout << "Error: Unknown command " << command << "." << endl;
+}
+
 void Messages::ERR_NEEDMOREPARAMS(const string& command)
 {
     cout << "Error: Not enough parameters for command " << command << "." << endl;
 }
 
-void Messages::ERR_ALREADYREGISTRED(const string& user)
+void Messages::ERR_ALREADYREGISTRED(const string& client)
 {
-    cout << "Error: User " << user << " is already registered." << endl;
+    cout << "Error: client " << client << " is already registered." << endl;
 }
 
-void Messages::ERR_PASSWDMISMATCH(const string& user)
+void Messages::ERR_PASSWDMISMATCH()
 {
-    cout << "Error: Password mismatch for user " << user << "." << endl;
+    cout << "Error: Password mismatch for client." << endl;
 }
 
 void Messages::ERR_NONICKNAMEGIVEN()
@@ -81,19 +86,19 @@ void Messages::RPL_NOTOPIC(const string& channel)
     cout << "No topic is set for channel " << channel << "." << endl;
 }
 
-void Messages::RPL_INVITING(const string& channel, const string& user)
+void Messages::RPL_INVITING(const string& channel, const string& client)
 {
-    cout << "Inviting user " << user << " to channel " << channel << "." << endl;
+    cout << "Inviting client " << client << " to channel " << channel << "." << endl;
 }
 
-void Messages::ERR_USERONCHANNEL(const string& user, const string& channel)
+void Messages::ERR_clientONCHANNEL(const string& client, const string& channel)
 {
-    cout << "Error: User " << user << " is already on channel " << channel << "." << endl;
+    cout << "Error: client " << client << " is already on channel " << channel << "." << endl;
 }
 
-void Messages::ERR_USERNOTINCHANNEL(const string& user, const string& channel)
+void Messages::ERR_clientNOTINCHANNEL(const string& client, const string& channel)
 {
-    cout << "Error: User " << user << " is not in channel " << channel << "." << endl;
+    cout << "Error: client " << client << " is not in channel " << channel << "." << endl;
 }
 
 void Messages::ERR_NOSUCHNICK(const string& nickname)
@@ -126,14 +131,14 @@ void Messages::ERR_UMODEUNKNOWNFLAG(const string& flag)
     cout << "Error: Unknown mode flag " << flag << "." << endl;
 }
 
-void Messages::ERR_USERSDONTMATCH()
+void Messages::ERR_clientSDONTMATCH()
 {
-    cout << "Error: Users don't match." << endl;
+    cout << "Error: clients don't match." << endl;
 }
 
-void Messages::RPL_UMODEIS(const string& user, const string& mode)
+void Messages::RPL_UMODEIS(const string& client, const string& mode)
 {
-    cout << "User mode for " << user << " is: " << mode << endl;
+    cout << "client mode for " << client << " is: " << mode << endl;
 }
 
 void Messages::RPL_CHANMODEIS(const string& channel, const string& mode)
