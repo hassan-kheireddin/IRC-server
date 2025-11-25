@@ -6,6 +6,11 @@ void Messages::RPL_WELCOME(const string& client)
     cout << client << ", Welcome to the server! If you want to Join Channels you must be authenticated." << endl;
 }
 
+void Messages::RPL_AUTHENTICATED(const string& client)
+{
+    cout << client << ", You have been successfully authenticated!" << endl;
+}
+
 void Messages::RPL_CREATED(const string& message)
 {
     cout << message << endl;
@@ -26,9 +31,19 @@ void Messages::ERR_ALREADYREGISTRED(const string& client)
     cout << "Error: client " << client << " is already registered." << endl;
 }
 
+void Messages::ERR_ALREADYAUTHENTICATED(const string& client)
+{
+    cout << "Error: client " << client << " is already authenticated." << endl;
+}
+
 void Messages::ERR_PASSWDMISMATCH()
 {
     cout << "Error: Password mismatch for client." << endl;
+}
+
+void Messages::ERR_NOTAUTHENTICATED(const string& client)
+{
+    cout << "Error: client " << client << " is not authenticated. You Should provide Password for the Server, Nickname and Username." << endl;
 }
 
 void Messages::ERR_NONICKNAMEGIVEN()

@@ -168,6 +168,7 @@ Channel* Server::createOrGetChannel(const string& channelName)
 {
     if (_channels.find(channelName) == _channels.end())
         _channels[channelName] = new Channel(channelName);
+        
     return _channels[channelName];
 }
 

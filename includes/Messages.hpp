@@ -12,7 +12,10 @@ class Messages
     //welcome and server creation messages
         void RPL_WELCOME(const string& client);
         void RPL_CREATED(const string& message);
-
+    //authentication messages
+        void RPL_AUTHENTICATED(const string& client);
+        void ERR_NOTAUTHENTICATED(const string& client);
+        void ERR_ALREADYAUTHENTICATED(const string& client);
     //no enough parameters error used by PASS, NICK, JOIN, TOPIC, INVITE, PRIVMSG, Kick.
         void ERR_NEEDMOREPARAMS(const string& command);
     //already registered error used by PASS.
