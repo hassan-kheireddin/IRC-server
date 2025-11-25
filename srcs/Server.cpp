@@ -190,3 +190,21 @@ Clients* Server::getClientByNickname(const string& nickname) const
     }
     return nullptr;
 }
+
+/*
+
+Client Decides to Connect
+ What happens:
+ 1. Client creates socket
+ 2. DNS lookup: irc.myserver.com → IP address
+ 3. TCP 3-way handshake:
+    Client → SYN → Server
+    Client ← SYN-ACK ← Server  
+    Client → ACK → Server
+ 4. Connection established!
+
+Server Accepts Connection
+     Creates new socket specifically for this client
+     Adds to poll() monitoring list
+     Creates Client object to track this user
+*/
