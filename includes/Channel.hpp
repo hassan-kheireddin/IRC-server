@@ -32,18 +32,25 @@ class Channel {
 
         void addClient(Client* client);
         void removeClient(Client* client);
+        void removeClient(const string& nickname);
         bool hasClient(Client* client) const;
+        bool hasClient(const string& nickname) const;
 
         void setOperator(Client* client);
+        void setOperator(const string& nickname);
         const string& getOperator() const;
         bool isOperator(Client* client) const;
+        bool isOperator(const string& nickname) const;
         void removeOperator(Client* client);
 
         void inviteClient(Client* client);
         bool isInviteOnly() const;
         void addInvitation(Client* client);
+        void addInvitation(const string& nickname);
         void removeInvitation(Client* client);
+        void removeInvitation(const string& nickname);
         bool isInvited(Client* client) const;
+        bool isInvited(const string& nickname) const;
 
         const set<Client*>& getClients() const;
 

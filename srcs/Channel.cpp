@@ -1,8 +1,8 @@
-#include "../includes/Command.hpp"
+#include "../includes/Channel.hpp"
 
 using namespace std;
 
-Channel::Channel(const std::string& name) : name(name), topic(""), operatorNickname(""), key(""), clientLimit(0) {}
+Channel::Channel(const std::string& name) : _name(name), _topic(""), _key(""), _hasKey(false), _userLimit(0), _hasUserLimit(false) {}
 
 Channel::~Channel() {}
 
@@ -29,16 +29,60 @@ void Channel::removeClient(Client* client) {
     _clients.erase(client);
 }
 
+void Channel::removeClient(const string& nickname) {
+    for (set<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+        if ((*it)->getNickname() == nickname) {
+            if (isOperator(*it)) {
+                removeOperator(*it);
+            }
+            _clients.erase(it);
+            return;
+        }
+    }
+}
+
 bool Channel::hasClient(Client* client) const {
     return _clients.find(client) != _clients.end();
+}
+
+bool Channel::hasClient(const string& nickname) const {
+    for (set<Client*>::const_iterator it = _clients.begin(); it != _clients.end(); ++it) {
+        if ((*it)->getNickname() == nickname)
+            return true;
+    }
+    return false;
 }
 
 void Channel::setOperator(Client* client) {
     _operators.insert(client);
 }
 
+void Channel::setOperator(const string& nickname) {
+    for (set<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+        if ((*it)->getNickname() == nickname) {
+            _operators.insert(*it);
+            return;
+        }
+    }
+}
+
+const string& Channel::getOperator() const {
+    static string empty = "";
+    if (_operators.empty())
+        return empty;
+    return (*_operators.begin())->getNickname();
+}
+
 bool Channel::isOperator(Client* client) const {
     return _operators.find(client) != _operators.end();
+}
+
+bool Channel::isOperator(const string& nickname) const {
+    for (set<Client*>::const_iterator it = _operators.begin(); it != _operators.end(); ++it) {
+        if ((*it)->getNickname() == nickname)
+            return true;
+    }
+    return false;
 }
 
 void Channel::removeOperator(Client* client) {
@@ -57,13 +101,39 @@ void Channel::addInvitation(Client* client) {
     _invited.insert(client);
 }
 
+void Channel::addInvitation(const string& nickname) {
+    for (set<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+        if ((*it)->getNickname() == nickname) {
+            _invited.insert(*it);
+            return;
+        }
+    }
+}
 
-\void Channel::removeInvitation(Client* client) {
+
+void Channel::removeInvitation(Client* client) {
     _invited.erase(client);
+}
+
+void Channel::removeInvitation(const string& nickname) {
+    for (set<Client*>::iterator it = _invited.begin(); it != _invited.end(); ++it) {
+        if ((*it)->getNickname() == nickname) {
+            _invited.erase(it);
+            return;
+        }
+    }
 }
 
 bool Channel::isInvited(Client* client) const {
     return _invited.find(client) != _invited.end();
+}
+
+bool Channel::isInvited(const string& nickname) const {
+    for (set<Client*>::const_iterator it = _invited.begin(); it != _invited.end(); ++it) {
+        if ((*it)->getNickname() == nickname)
+            return true;
+    }
+    return false;
 }
 
 const set<Client*>& Channel::getClients() const {

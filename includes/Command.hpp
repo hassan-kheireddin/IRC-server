@@ -22,6 +22,7 @@ class Command {
         static void INVITE(const vector<string>& params, Client& client, Server& server);
         static void TOPIC(const vector<string>& params, Client& client, Server& server);
         static void MODE(const vector<string>& params, Client& client, Server& server);
+        static void PRIVMSG(const vector<string>& params, Client& client, Server& server);
 
     public:
         static void executeCommand(const string& commandLine, Client& client, Server& server);

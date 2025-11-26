@@ -23,8 +23,19 @@ void Server::setupServerSocket() // handles the creation and configuration of th
         throw runtime_error("Failed to create socket");
 
     int opt = 1;
-    if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)// Allows reusing the same port quickly after restart
-        throw runtime_error("setsockopt failed");
+    // SO_REUSEADDR allows immediate reuse of the port
+    if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        close(_serverSocket);
+        throw runtime_error("setsockopt SO_REUSEADDR failed");
+    }
+
+    // SO_REUSEPORT allows multiple sockets to bind to the same port (optional, for load balancing)
+    #ifdef SO_REUSEPORT
+    if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
+        close(_serverSocket);
+        throw runtime_error("setsockopt SO_REUSEPORT failed");
+    }
+    #endif
 
     fcntl(_serverSocket, F_SETFL, O_NONBLOCK);// Sets socket to non-blocking mode
     
@@ -35,11 +46,15 @@ void Server::setupServerSocket() // handles the creation and configuration of th
     serverAddr.sin_addr.s_addr = INADDR_ANY; // 0.0.0.0 - listens(bind) on all available interfaces
     serverAddr.sin_port = htons(_port); // Converts port number to network byte order
 
-    if (bind(_serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) // Binds socket to the specified port on the local machine
-        throw runtime_error("Bind failed");
+    if (bind(_serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) { // Binds socket to the specified port on the local machine
+        close(_serverSocket);
+        throw runtime_error("Bind failed - port may already be in use");
+    }
 
-    if (listen(_serverSocket, 10) < 0) // Prepares it to listen for incoming connections
+    if (listen(_serverSocket, 10) < 0) { // Prepares it to listen for incoming connections
+        close(_serverSocket);
         throw runtime_error("Listen failed");
+    }
 
     pollfd pfd;
     pfd.fd = _serverSocket;

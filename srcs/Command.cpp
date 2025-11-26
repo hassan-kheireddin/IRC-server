@@ -1,4 +1,5 @@
 #include "../includes/Command.hpp"
+#include <iostream>
 
 using namespace std;
 
@@ -43,7 +44,8 @@ void Command::executeCommand(const string& commandLine, Client& client, Server& 
     }
 }
 
-static void Command::AUTHENTICATE(Client& client, Server& server) {
+void Command::AUTHENTICATE(Client& client, Server& server) {
+        (void)server;
         if (client.isAuth()) {
             cout << "Error: client " << client.getNickname() << " is already authenticated." << endl;
             return;
@@ -56,7 +58,7 @@ static void Command::AUTHENTICATE(Client& client, Server& server) {
         }
 }
 
-static void Command::PASS(const vector<string>& params, Client& client, Server& server) {
+void Command::PASS(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 1)
     {
         cout << "Error: Not enough parameters for command PASS." << endl;
@@ -77,7 +79,7 @@ static void Command::PASS(const vector<string>& params, Client& client, Server& 
     }
 }
 
-static void Command::NICK(const vector<string>& params, Client& client, Server& server) {
+void Command::NICK(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 1)
     {
         string error = "Error: Not enough parameters for command NICK\r\n";
@@ -102,7 +104,7 @@ static void Command::NICK(const vector<string>& params, Client& client, Server& 
         return;
     }
 
-    if (server.manageNickname(nickname, nullptr, CHECK)) {
+    if (server.manageNickname(nickname, NULL, CHECK)) {
         string error = "Error: Nickname " + nickname + " is already in use.\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
         cout << "Error: Nickname " << nickname << " is already in use." << endl;
@@ -111,7 +113,7 @@ static void Command::NICK(const vector<string>& params, Client& client, Server& 
 
     string oldNickname = client.getNickname();
     if (!oldNickname.empty()) {
-        server.manageNickname(oldNickname, nullptr, UNREGISTER);
+        server.manageNickname(oldNickname, NULL, UNREGISTER);
     }
 
     server.manageNickname(nickname, &client, REGISTER);
@@ -119,7 +121,7 @@ static void Command::NICK(const vector<string>& params, Client& client, Server& 
     client.HasSentNick(true);
 }
 
-static bool Command::isValidNickname(const string& nickname) {
+bool Command::isValidNickname(const string& nickname) {
     if (nickname.empty() || nickname.length() > 9)
         return false;
 
@@ -135,7 +137,8 @@ static bool Command::isValidNickname(const string& nickname) {
     return true;
 }
 
-static void Command::USER(const vector<string>& params, Client& client, Server& server) {
+void Command::USER(const vector<string>& params, Client& client, Server& server) {
+    (void)server;
     if (params.size() < 4)
     {
         cout << "Error: Not enough parameters for command USER." << endl;
@@ -148,7 +151,7 @@ static void Command::USER(const vector<string>& params, Client& client, Server& 
 }
 
 
-static void Command::JOIN(const vector<string>& params, Client& client, Server& server) {
+void Command::JOIN(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
         string error1 = "Error: Not enough parameters for command JOIN\r\n";
@@ -226,7 +229,7 @@ static void Command::JOIN(const vector<string>& params, Client& client, Server& 
 
     string namesList = client.getNickname() + "=" + channelName + " :";
     for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
-        if ((*it)->getNickname() == channel->getOperator()) {
+        if (channel->isOperator(*it)) {
             namesList += "@" + (*it)->getNickname() + " ";
         } else {
             namesList += (*it)->getNickname() + " ";
@@ -236,7 +239,7 @@ static void Command::JOIN(const vector<string>& params, Client& client, Server& 
     send(client.getFd(), namesList.c_str(), namesList.length(), 0);
 }
 
-static void Command::KICK(const vector<string>& params, Client& client, Server& server) {
+void Command::KICK(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 3)
     {
         cout << "Error: Not enough parameters for command KICK." << endl;
@@ -272,7 +275,7 @@ static void Command::KICK(const vector<string>& params, Client& client, Server& 
 }
 
 
-static void Command::INVITE(const vector<string>& params, Client& client, Server& server) {
+void Command::INVITE(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
         cout << "Error: Not enough parameters for command INVITE." << endl;
@@ -301,7 +304,7 @@ static void Command::INVITE(const vector<string>& params, Client& client, Server
         return;
     }
 
-    if (channel->hasInvitation(targetNickname)) {
+    if (channel->isInvited(targetNickname)) {
         cout << "Error: client " << targetNickname << " is already on channel " << channelName << "." << endl;
         return;
     }
@@ -312,7 +315,7 @@ static void Command::INVITE(const vector<string>& params, Client& client, Server
     send(targetClient->getFd(), inviteMsg.c_str(), inviteMsg.length(), 0);
 }
 
-static void Command::TOPIC(const vector<string>& params, Client& client, Server& server) {
+void Command::TOPIC(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
         cout << "Error: Not enough parameters for command TOPIC." << endl;
@@ -332,41 +335,43 @@ static void Command::TOPIC(const vector<string>& params, Client& client, Server&
         return;
     }
 
-    if (channel->hasMode('t') && !channel->isOperator(client)) {
-            std::string error = ":ircserv 482 " + channelName + " :You're not a channel operator\r\n";
+    // SET TOPIC
+    if (params.size() >= 2) {
+        if (channel->hasMode('t') && !channel->isOperator(&client)) {
+            string error = ":ircserv 482 " + channelName + " :You're not a channel operator\r\n";
             send(client.getFd(), error.c_str(), error.length(), 0);
             return;
         }
 
         // Combine topic text
-        std::string newTopic;
-        for (size_t i = 2; i < args.size(); ++i) {
-            if (i == 2 && args[i][0] == ':')
-                newTopic = args[i].substr(1);
-            else
-                newTopic += " " + args[i];
+        string newTopic = params[1];
+        for (size_t i = 2; i < params.size(); ++i) {
+            newTopic += " " + params[i];
         }
+        // Remove leading ':' if present
+        if (!newTopic.empty() && newTopic[0] == ':')
+            newTopic = newTopic.substr(1);
 
         channel->setTopic(newTopic);
 
-        std::string topicMsg = ":" + client.getNickname() + " TOPIC " + channelName + " :" + newTopic + "\r\n";
-        for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
+        string topicMsg = ":" + client.getNickname() + " TOPIC " + channelName + " :" + newTopic + "\r\n";
+        for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
             send((*it)->getFd(), topicMsg.c_str(), topicMsg.length(), 0);
+        }
     }
-
-    //  VIEW TOPIC
+    // VIEW TOPIC
     else {
         if (!channel->getTopic().empty()) {
-            std::string topic = ":ircserv 332 " + client.getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
+            string topic = ":ircserv 332 " + client.getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
             send(client.getFd(), topic.c_str(), topic.length(), 0);
         } else {
-            std::string notopic = ":ircserv 331 " + client.getNickname() + " " + channelName + " :No topic is set\r\n";
+            string notopic = ":ircserv 331 " + client.getNickname() + " " + channelName + " :No topic is set\r\n";
             send(client.getFd(), notopic.c_str(), notopic.length(), 0);
         }
     }
 }
 
-static void Command::MODE(const vector<string>& params, Client& client, Server& server) {
+void Command::MODE(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
         cout << "Error: Not enough parameters for command MODE." << endl;
@@ -388,19 +393,19 @@ static void Command::MODE(const vector<string>& params, Client& client, Server& 
         return;
     }
     
- char sign = modeString[0];
+    char sign = modeChanges[0];
     if (sign != '+' && sign != '-') {
-        std::string error = ":ircserv 472 " + modeString + " :is unknown mode char\r\n";
-        send(client->getFd(), error.c_str(), error.length(), 0);
+        string error = ":ircserv 472 " + modeChanges + " :is unknown mode char\r\n";
+        send(client.getFd(), error.c_str(), error.length(), 0);
         return;
     }
 
     size_t argIndex = 2;
 
-    std::string modesConfirmed = ":" + client->getNickname() + " MODE " + channelName + " " + modeString;
+    string modesConfirmed = ":" + client.getNickname() + " MODE " + channelName + " " + modeChanges;
 
-    for (size_t i = 1; i < modeString.length(); ++i) {
-        char mode = modeString[i];
+    for (size_t i = 1; i < modeChanges.length(); ++i) {
+        char mode = modeChanges[i];
 
         switch (mode) {
             case 'i':
@@ -419,12 +424,12 @@ static void Command::MODE(const vector<string>& params, Client& client, Server& 
 
             case 'k':
                 if (sign == '+') {
-                    if (args.size() <= argIndex) {
-                        std::string error = ":ircserv 461 MODE :Missing key parameter for +k\r\n";
-                        send(client->getFd(), error.c_str(), error.length(), 0);
+                    if (params.size() <= argIndex) {
+                        string error = ":ircserv 461 MODE :Missing key parameter for +k\r\n";
+                        send(client.getFd(), error.c_str(), error.length(), 0);
                         return;
                     }
-                    channel->setKey(args[argIndex++]);
+                    channel->setKey(params[argIndex++]);
                 } else {
                     channel->removeKey();
                 }
@@ -432,60 +437,64 @@ static void Command::MODE(const vector<string>& params, Client& client, Server& 
 
             case 'l':
                 if (sign == '+') {
-                    if (args.size() <= argIndex) {
-                        std::string error = ":ircserv 461 MODE :Missing parameter for +l\r\n";
-                        send(client->getFd(), error.c_str(), error.length(), 0);
+                    if (params.size() <= argIndex) {
+                        string error = ":ircserv 461 MODE :Missing parameter for +l\r\n";
+                        send(client.getFd(), error.c_str(), error.length(), 0);
                         return;
                     }
 
-                    std::istringstream iss(args[argIndex++]);
-                    size_t limit;
-                    if (!(iss >> limit)) {
-                        std::string error = ":ircserv 461 MODE :Invalid limit value\r\n";
-                        send(client->getFd(), error.c_str(), error.length(), 0);
-                        return;
+                    size_t limit = 0;
+                    for (size_t j = 0; j < params[argIndex].length(); ++j) {
+                        if (params[argIndex][j] >= '0' && params[argIndex][j] <= '9') {
+                            limit = limit * 10 + (params[argIndex][j] - '0');
+                        } else {
+                            string error = ":ircserv 461 MODE :Invalid limit value\r\n";
+                            send(client.getFd(), error.c_str(), error.length(), 0);
+                            return;
+                        }
                     }
+                    argIndex++;
 
-                    channel->setUserLimit(limit);
+                    channel->setClientLimit(limit);
                 } else {
-                    channel->removeUserLimit();
+                    channel->removeClientLimit();
                 }
                 break;
 
             case 'o':
-                if (args.size() <= argIndex) {
-                    std::string error = ":ircserv 461 MODE :Missing nickname parameter for +o/-o\r\n";
-                    send(client->getFd(), error.c_str(), error.length(), 0);
+                if (params.size() <= argIndex) {
+                    string error = ":ircserv 461 MODE :Missing nickname parameter for +o/-o\r\n";
+                    send(client.getFd(), error.c_str(), error.length(), 0);
                     return;
                 }
 
                 {
-                    std::string targetNick = args[argIndex++];
+                    string targetNick = params[argIndex++];
                     Client* target = server.getClientByNickname(targetNick);
 
-                    if (!target || !channel->hasClient(target)) {
-                        std::string error = ":ircserv 441 " + targetNick + " " + channelName + " :They aren't on that channel\r\n";
-                        send(client->getFd(), error.c_str(), error.length(), 0);
+                    if (!target || !channel->hasClient(targetNick)) {
+                        string error = ":ircserv 441 " + targetNick + " " + channelName + " :They aren't on that channel\r\n";
+                        send(client.getFd(), error.c_str(), error.length(), 0);
                         return;
                     }
 
                     if (sign == '+')
-                        channel->addOperator(target);
+                        channel->setOperator(targetNick);
                     else
                         channel->removeOperator(target);
 
                     // Inform everyone about the operator change
-                    std::string opChange = ":" + client->getNickname() + " MODE " + channelName + " " + sign + "o " + targetNick + "\r\n";
-                    for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it)
+                    string opChange = ":" + client.getNickname() + " MODE " + channelName + " " + sign + "o " + targetNick + "\r\n";
+                    for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it)
                         send((*it)->getFd(), opChange.c_str(), opChange.length(), 0);
                 }
                 break;
 
             default:
-                std::string error = ":ircserv 472 ";
+                string error = ":ircserv 472 ";
                 error += mode;
                 error += " :is unknown mode char\r\n";
-                send(client->getFd(), error.c_str(), error.length(), 0);
+                send(client.getFd(), error.c_str(), error.length(), 0);
                 return;
         }
     }
@@ -493,12 +502,12 @@ static void Command::MODE(const vector<string>& params, Client& client, Server& 
     modesConfirmed += "\r\n";
 
     // Broadcast the overall mode change to all users in the channel
-    for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
+    for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
         send((*it)->getFd(), modesConfirmed.c_str(), modesConfirmed.length(), 0);
     }
 }
 
-static void Command::PRIVMSG(const vector<string>& params, Client& client, Server& server) {
+void Command::PRIVMSG(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
         cout << "Error: Not enough parameters for command PRIVMSG." << endl;
