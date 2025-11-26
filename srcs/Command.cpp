@@ -388,24 +388,113 @@ static void Command::MODE(const vector<string>& params, Client& client, Server& 
         return;
     }
     
-    if (modeChanges[0] == '+') {
-        for (size_t i = 1; i < modeChanges.length(); ++i) {
-            channel->setMode(modeChanges[i], true);
-        }
-    } else if (modeChanges[0] == '-') {
-        for (size_t i = 1; i < modeChanges.length(); ++i) {
-            channel->setMode(modeChanges[i], false);
-        }
-    } else {
-        Messages::ERR_UNKNOWNMODE(modeChanges);
+ char sign = modeString[0];
+    if (sign != '+' && sign != '-') {
+        std::string error = ":ircserv 472 " + modeString + " :is unknown mode char\r\n";
+        send(client->getFd(), error.c_str(), error.length(), 0);
         return;
     }
-    
 
+    size_t argIndex = 2;
 
-    string modeMsg = ":" + client.getNickname() + " MODE " + channelName + " " + modeChanges + "\r\n";
-    for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
-        send((*it)->getFd(), modeMsg.c_str(), modeMsg.length(), 0);
+    std::string modesConfirmed = ":" + client->getNickname() + " MODE " + channelName + " " + modeString;
+
+    for (size_t i = 1; i < modeString.length(); ++i) {
+        char mode = modeString[i];
+
+        switch (mode) {
+            case 'i':
+                if (sign == '+')
+                    channel->addMode('i');
+                else
+                    channel->removeMode('i');
+                break;
+
+            case 't':
+                if (sign == '+')
+                    channel->addMode('t');
+                else
+                    channel->removeMode('t');
+                break;
+
+            case 'k':
+                if (sign == '+') {
+                    if (args.size() <= argIndex) {
+                        std::string error = ":ircserv 461 MODE :Missing key parameter for +k\r\n";
+                        send(client->getFd(), error.c_str(), error.length(), 0);
+                        return;
+                    }
+                    channel->setKey(args[argIndex++]);
+                } else {
+                    channel->removeKey();
+                }
+                break;
+
+            case 'l':
+                if (sign == '+') {
+                    if (args.size() <= argIndex) {
+                        std::string error = ":ircserv 461 MODE :Missing parameter for +l\r\n";
+                        send(client->getFd(), error.c_str(), error.length(), 0);
+                        return;
+                    }
+
+                    std::istringstream iss(args[argIndex++]);
+                    size_t limit;
+                    if (!(iss >> limit)) {
+                        std::string error = ":ircserv 461 MODE :Invalid limit value\r\n";
+                        send(client->getFd(), error.c_str(), error.length(), 0);
+                        return;
+                    }
+
+                    channel->setUserLimit(limit);
+                } else {
+                    channel->removeUserLimit();
+                }
+                break;
+
+            case 'o':
+                if (args.size() <= argIndex) {
+                    std::string error = ":ircserv 461 MODE :Missing nickname parameter for +o/-o\r\n";
+                    send(client->getFd(), error.c_str(), error.length(), 0);
+                    return;
+                }
+
+                {
+                    std::string targetNick = args[argIndex++];
+                    Client* target = server.getClientByNickname(targetNick);
+
+                    if (!target || !channel->hasClient(target)) {
+                        std::string error = ":ircserv 441 " + targetNick + " " + channelName + " :They aren't on that channel\r\n";
+                        send(client->getFd(), error.c_str(), error.length(), 0);
+                        return;
+                    }
+
+                    if (sign == '+')
+                        channel->addOperator(target);
+                    else
+                        channel->removeOperator(target);
+
+                    // Inform everyone about the operator change
+                    std::string opChange = ":" + client->getNickname() + " MODE " + channelName + " " + sign + "o " + targetNick + "\r\n";
+                    for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it)
+                        send((*it)->getFd(), opChange.c_str(), opChange.length(), 0);
+                }
+                break;
+
+            default:
+                std::string error = ":ircserv 472 ";
+                error += mode;
+                error += " :is unknown mode char\r\n";
+                send(client->getFd(), error.c_str(), error.length(), 0);
+                return;
+        }
+    }
+
+    modesConfirmed += "\r\n";
+
+    // Broadcast the overall mode change to all users in the channel
+    for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
+        send((*it)->getFd(), modesConfirmed.c_str(), modesConfirmed.length(), 0);
     }
 }
 
