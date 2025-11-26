@@ -1,4 +1,4 @@
-#include "../includes/Messages.hpp"
+#include "../includes/Server.hpp"
 
 using namespace std;
 
@@ -43,7 +43,7 @@ void Server::setupServerSocket() // handles the creation and configuration of th
     pfd.events = POLLIN;
     _pollfds.push_back(pfd);
 
-    Messages::RPL_CREATED(" Server is up and running on port " + to_string(_port));
+    cout << " Server is up and running on port " << _port << endl;
 }
 
 void Server::run() {
@@ -172,19 +172,26 @@ Channel* Server::createOrGetChannel(const string& channelName)
     return _channels[channelName];
 }
 
+Channel* Server::getChannel(const string& channelName)
+{
+    if (_channels.find(channelName) != _channels.end())
+        return _channels[channelName];
+    return nullptr;
+}
+
 const string& Server::getPassword() const
 {
     return _password;
 }
 
-const map<int, Clients*>& Server::getClients() const
+const map<int, Client*>& Server::getClients() const
 {
     return _clients;
 }
 
-Clients* Server::getClientByNickname(const string& nickname) const
+Client* Server::getClientByNickname(const string& nickname) const
 {
-    for (map<int, Clients*>::const_iterator it = _clients.begin(); it != _clients.end(); ++it)
+    for (map<int, Client*>::const_iterator it = _clients.begin(); it != _clients.end(); ++it)
     {
         if (it->second->getNickname() == nickname)
             return it->second;

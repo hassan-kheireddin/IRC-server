@@ -3,9 +3,9 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include <memory>
 #include "Client.hpp"
-#include "Message.hpp"
 #include "Server.hpp"
 
 using namespace std;

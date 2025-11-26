@@ -5,7 +5,6 @@
 #include <vector>
 #include "Client.hpp"
 #include "Server.hpp"
-#include "Message.hpp"
 #include <sys/socket.h> //for send() : it is used for sending messages to clients 
 
 using namespace std;

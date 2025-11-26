@@ -9,13 +9,14 @@ SRCS = main.cpp \
 	   srcs/Client.cpp \
 	   srcs/Command.cpp \
 	   srcs/Channel.cpp \
-	   srcs/Message.cpp \
 
 OBJS = $(SRCS:.cpp=.o)
 
 
 all: $(NAME)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $(NAME) $(OBJS)
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 $(NAME): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $(NAME) $(OBJS)

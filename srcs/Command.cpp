@@ -39,41 +39,41 @@ void Command::executeCommand(const string& commandLine, Client& client, Server& 
         PRIVMSG(params, client, server);
     }
     else {
-        Messages::ERR_UNKNOWNCOMMAND(command);
+        cout << "Error: Unknown command " << command << "." << endl;
     }
 }
 
 static void Command::AUTHENTICATE(Client& client, Server& server) {
         if (client.isAuth()) {
-            Messages::ERR_ALREADYAUTHENTICATED(client.getNickname());
+            cout << "Error: client " << client.getNickname() << " is already authenticated." << endl;
             return;
         }
         if (client.hasSentPass() && client.hasSentNick() && client.hasSentUser()) {
             client.setAuth(true);
-            Messages::RPL_AUTHENTICATED(client.getNickname());
+            cout << client.getNickname() << ", You have been successfully authenticated!" << endl;
         } else {
-            Messages::ERR_NOTAUTHENTICATED(client.getNickname());
+            cout << "Error: client " << client.getNickname() << " is not authenticated. You Should provide Password for the Server, Nickname and Username." << endl;
         }
 }
 
 static void Command::PASS(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 1)
     {
-        Messages::ERR_NEEDMOREPARAMS("PASS");
+        cout << "Error: Not enough parameters for command PASS." << endl;
         return;
     }
 
     if (client.isReg()) {
-        Messages::ERR_ALREADYREGISTRED(client.getNickname());
+        cout << "Error: client " << client.getNickname() << " is already registered." << endl;
         return;
     }
 
     if (params[0] == server.getPassword()) {
         client.setReg(true);
         client.HasSentPass(true);
-        Messages::RPL_WELCOME(client.getNickname());
+        cout << client.getNickname() << ", Welcome to the server! If you want to Join Channels you must be authenticated." << endl;
     } else {
-        Messages::ERR_PASSWDMISMATCH();
+        cout << "Error: Password mismatch for client." << endl;
     }
 }
 
@@ -82,7 +82,7 @@ static void Command::NICK(const vector<string>& params, Client& client, Server& 
     {
         string error = "Error: Not enough parameters for command NICK\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
-        Messages::ERR_NEEDMOREPARAMS("NICK");
+        cout << "Error: Not enough parameters for command NICK." << endl;
         return;
     }
 
@@ -91,21 +91,21 @@ static void Command::NICK(const vector<string>& params, Client& client, Server& 
     if (nickname.empty()) {
         string error = "Error: No nickname given\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
-        Messages::ERR_NONICKNAMEGIVEN();
+        cout << "Error: No nickname given." << endl;
         return;
     }
 
     if (!isValidNickname(nickname)) {
         string error = "Error: Erroneous nickname " + nickname + ".\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
-        Messages::ERR_ERRONEUSNICKNAME(nickname);
+        cout << "Error: Erroneous nickname " << nickname << "." << endl;
         return;
     }
 
     if (server.manageNickname(nickname, nullptr, CHECK)) {
         string error = "Error: Nickname " + nickname + " is already in use.\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
-        Messages::ERR_NICKNAMEINUSE(nickname);
+        cout << "Error: Nickname " << nickname << " is already in use." << endl;
         return;
     }
 
@@ -138,7 +138,7 @@ static bool Command::isValidNickname(const string& nickname) {
 static void Command::USER(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 4)
     {
-        Messages::ERR_NEEDMOREPARAMS("USER");
+        cout << "Error: Not enough parameters for command USER." << endl;
         return;
     }
 
@@ -153,13 +153,13 @@ static void Command::JOIN(const vector<string>& params, Client& client, Server& 
     {
         string error1 = "Error: Not enough parameters for command JOIN\r\n";
         send(client.getFd(), error1.c_str(), error1.length(), 0);
-        Messages::ERR_NEEDMOREPARAMS("JOIN");
+        cout << "Error: Not enough parameters for command JOIN." << endl;
         return;
     }
     if (!client.isAuth()) {
         string error2 = "Error: Client not authenticated\r\n";
         send(client.getFd(), error2.c_str(), error2.length(), 0);
-        Messages::ERR_NOTAUTHENTICATED(client.getNickname());
+        cout << "Error: client " << client.getNickname() << " is not authenticated. You Should provide Password for the Server, Nickname and Username." << endl;
         return;
     }
 
@@ -168,7 +168,7 @@ static void Command::JOIN(const vector<string>& params, Client& client, Server& 
     if (channelName.empty() || channelName[0] != '#') {
         string error3 = "Error: Invalid channel name " + channelName + ".\r\n";
         send(client.getFd(), error3.c_str(), error3.length(), 0);
-        Messages::ERR_NOSUCHCHANNEL(channelName);
+        cout << "Error: No such channel " << channelName << "." << endl;
         return;
     }
 
@@ -178,7 +178,7 @@ static void Command::JOIN(const vector<string>& params, Client& client, Server& 
     if (channel->isInviteOnly() && !channel->isInvited(client.getNickname())) {
         string error4 = "Error: Channel " + channelName + " is invite-only. (+i)\r\n";
         send(client.getFd(), error4.c_str(), error4.length(), 0);
-        Messages::ERR_INVITEONLYCHAN(channelName);
+        cout << "Error: Channel " << channelName << " is invite-only. (+i)" << endl;
         return;
     }
 
@@ -186,7 +186,7 @@ static void Command::JOIN(const vector<string>& params, Client& client, Server& 
         if (channelKey != channel->getKey()) {
             string error5 = "Error: Bad channel key for " + channelName + ". (+k)\r\n";
             send(client.getFd(), error5.c_str(), error5.length(), 0);
-            Messages::ERR_BADCHANNELKEY(channelName);
+            cout << "Error: Bad channel key for channel (+k)" << channelName << "." << endl;
             return;
         }
     }
@@ -195,7 +195,7 @@ static void Command::JOIN(const vector<string>& params, Client& client, Server& 
         if (channel->isFull()) {
             string error6 = "Error: Channel " + channelName + " is full. (+l)\r\n";
             send(client.getFd(), error6.c_str(), error6.length(), 0);
-            Messages::ERR_CHANNELISFULL(channelName);
+            cout << "Error: Channel " << channelName << " is full. (+l)" << endl;
             return;
         }
     }
@@ -217,11 +217,11 @@ static void Command::JOIN(const vector<string>& params, Client& client, Server& 
     if (!channel->getTopic().empty()) {
         string topicMsg = client.getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
         send(client.getFd(), topicMsg.c_str(), topicMsg.length(), 0);
-        Messages::RPL_TOPIC(client.getNickname(), channelName, channel->getTopic());
+        cout << "Topic for channel " << channelName << " is: " << channel->getTopic() << endl;
     } else {
         string noTopicMsg = client.getNickname() + " " + channelName + " :No topic is set\r\n";
         send(client.getFd(), noTopicMsg.c_str(), noTopicMsg.length(), 0);
-        Messages::RPL_NOTOPIC(client.getNickname(), channelName);
+        cout << "No topic is set for channel " << channelName << "." << endl;
     }
 
     string namesList = client.getNickname() + "=" + channelName + " :";
@@ -239,7 +239,7 @@ static void Command::JOIN(const vector<string>& params, Client& client, Server& 
 static void Command::KICK(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 3)
     {
-        Messages::ERR_NEEDMOREPARAMS("KICK");
+        cout << "Error: Not enough parameters for command KICK." << endl;
         return;
     }
     string channelName = params[0];
@@ -248,18 +248,18 @@ static void Command::KICK(const vector<string>& params, Client& client, Server& 
 
     Channel* channel = server.getChannel(channelName);
     if (!channel) {
-        Messages::ERR_NOSUCHCHANNEL(channelName);
+        cout << "Error: No such channel " << channelName << "." << endl;
         return;
 
     }
     if (!channel->isOperator(client.getNickname())) {
-        Messages::ERR_CHANOPRIVSNEEDED(channelName);
+        cout << "Error: You need channel operator privileges for channel " << channelName << "." << endl;
         return;
     }
     Client* targetClient = server.getClientByNickname(targetNickname);
 
     if (!targetClient || !channel->hasClient(targetNickname)) {
-        Messages::ERR_USERNOTINCHANNEL(targetNickname, channelName);
+        cout << "Error: client " << targetNickname << " is not in channel " << channelName << "." << endl;
         return;
     }
 
@@ -275,7 +275,7 @@ static void Command::KICK(const vector<string>& params, Client& client, Server& 
 static void Command::INVITE(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
-        Messages::ERR_NEEDMOREPARAMS("INVITE");
+        cout << "Error: Not enough parameters for command INVITE." << endl;
         return;
     }
     string targetNickname = params[0];
@@ -283,26 +283,26 @@ static void Command::INVITE(const vector<string>& params, Client& client, Server
 
     Channel* channel = server.getChannel(channelName);
     if (!channel) {
-        Messages::ERR_NOSUCHCHANNEL(channelName);
+        cout << "Error: No such channel " << channelName << "." << endl;
         return;
     }
     if (!channel->isOperator(client.getNickname())) {
-        Messages::ERR_CHANOPRIVSNEEDED(channelName);
+        cout << "Error: You need channel operator privileges for channel " << channelName << "." << endl;
         return;
     }
     Client* targetClient = server.getClientByNickname(targetNickname);
     if (!targetClient) {
-        Messages::ERR_NOSUCHNICK(targetNickname);
+        cout << "Error: No such nick " << targetNickname << "." << endl;
         return;
     }
 
     if (channel->hasClient(targetNickname)) {
-        Messages::ERR_USERONCHANNEL(targetNickname, channelName);
+        cout << "Error: client " << targetNickname << " is already on channel " << channelName << "." << endl;
         return;
     }
 
     if (channel->hasInvitation(targetNickname)) {
-        Messages::ERR_USERONCHANNEL(targetNickname, channelName);
+        cout << "Error: client " << targetNickname << " is already on channel " << channelName << "." << endl;
         return;
     }
 
@@ -315,7 +315,7 @@ static void Command::INVITE(const vector<string>& params, Client& client, Server
 static void Command::TOPIC(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
-        Messages::ERR_NEEDMOREPARAMS("TOPIC");
+        cout << "Error: Not enough parameters for command TOPIC." << endl;
         return;
     }
 
@@ -323,12 +323,12 @@ static void Command::TOPIC(const vector<string>& params, Client& client, Server&
 
     Channel* channel = server.getChannel(channelName);
     if (!channel) {
-        Messages::ERR_NOSUCHCHANNEL(channelName);
+        cout << "Error: No such channel " << channelName << "." << endl;
         return;
     }
 
     if (!channel->hasClient(client.getNickname())) {
-        Messages::ERR_NOTONCHANNEL(channelName);
+        cout << "Error: You are not in channel " << channelName << "." << endl;
         return;
     }
 
@@ -369,7 +369,7 @@ static void Command::TOPIC(const vector<string>& params, Client& client, Server&
 static void Command::MODE(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
-        Messages::ERR_NEEDMOREPARAMS("MODE");
+        cout << "Error: Not enough parameters for command MODE." << endl;
         return;
     }
 
@@ -379,12 +379,12 @@ static void Command::MODE(const vector<string>& params, Client& client, Server& 
     Channel* channel = server.getChannel(channelName);
 
     if (!channel) {
-        Messages::ERR_NOSUCHCHANNEL(channelName);
+        cout << "Error: No such channel " << channelName << "." << endl;
         return;
     }
 
     if (!channel->isOperator(client.getNickname())) {
-        Messages::ERR_CHANOPRIVSNEEDED(channelName);
+        cout << "Error: You need channel operator privileges for channel " << channelName << "." << endl;
         return;
     }
     
@@ -501,7 +501,7 @@ static void Command::MODE(const vector<string>& params, Client& client, Server& 
 static void Command::PRIVMSG(const vector<string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
-        Messages::ERR_NEEDMOREPARAMS("PRIVMSG");
+        cout << "Error: Not enough parameters for command PRIVMSG." << endl;
         return;
     }
 
@@ -514,11 +514,11 @@ static void Command::PRIVMSG(const vector<string>& params, Client& client, Serve
     if (target[0] == '#') {
         Channel* channel = server.getChannel(target);
         if (!channel) {
-            Messages::ERR_NOSUCHCHANNEL(target);
+            cout << "Error: No such channel " << target << "." << endl;
             return;
         }
         if (!channel->hasClient(client.getNickname())) {
-            Messages::ERR_CANNOTSENDTOCHAN(target);
+            cout << "Error: Cannot send to channel " << target << "." << endl;
             return;
         }
 
@@ -531,7 +531,7 @@ static void Command::PRIVMSG(const vector<string>& params, Client& client, Serve
     } else {
         Client* targetClient = server.getClientByNickname(target);
         if (!targetClient) {
-            Messages::ERR_NOSUCHNICK(target);
+            cout << "Error: No such nick " << target << "." << endl;
             return;
         }
 

@@ -11,12 +11,18 @@
 #include <netinet/in.h> // Internet address family
 #include <sys/socket.h> // Socket definitions
 #include <arpa/inet.h> // Internet operations definitions
-#include "Command.hpp"
-#include "Messages.hpp"
-#include "Clients.hpp"
+#include "Client.hpp"
 #include "Channel.hpp"
 
 using namespace std;
+
+enum NicknameOperation {
+    CHECK,
+    REGISTER,
+    UNREGISTER
+};
+
+class Command;
 
 class Server
 {
@@ -26,8 +32,8 @@ class Server
         int _serverSocket; // Server socket file descriptor
         vector<pollfd> _pollFds; // Poll file descriptors || This vector tracks ALL file descriptors the server needs to monitor (server socket + all client sockets)
         map<string, Channel*> _channels;// channel name → Channel object
-        map<int, Clients*> _clients; // socket FD → Client object
-        map<string, Clients*> _registeredNicknames; // nickname → Client object
+        map<int, Client*> _clients; // socket FD → Client object
+        map<string, Client*> _registeredNicknames; // nickname → Client object
 
         void setupServerSocket(); 
         void acceptNewConnection();
@@ -43,8 +49,9 @@ class Server
 
         const string& getPassword() const;
         Channel* createOrGetChannel(const string& channelName);
-        const map<int, Clients*>& getClients() const;
-        Clients* getClientByNickname(const string& nickname) const;
+        Channel* getChannel(const string& channelName);
+        const map<int, Client*>& getClients() const;
+        Client* getClientByNickname(const string& nickname) const;
         
 };
 

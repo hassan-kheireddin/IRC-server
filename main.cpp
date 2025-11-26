@@ -1,8 +1,8 @@
 #include <iostream>
-#include "Server.hpp"
-#include "Client.hpp"
-#include "Command.hpp"
-#include "Messages.hpp"
+#include <cstdlib>
+#include "includes/Server.hpp"
+#include "includes/Client.hpp"
+#include "includes/Command.hpp"
 #include <string>
 #include <vector>
 
