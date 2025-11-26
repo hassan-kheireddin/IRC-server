@@ -35,6 +35,8 @@ void Command::executeCommand(const string& commandLine, Client& client, Server& 
         TOPIC(params, client, server);
     } else if (command == "MODE") {
         MODE(params, client, server);
+    } else if (command == "PRIVMSG") {
+        PRIVMSG(params, client, server);
     }
     else {
         Messages::ERR_UNKNOWNCOMMAND(command);
@@ -361,5 +363,90 @@ static void Command::TOPIC(const vector<string>& params, Client& client, Server&
             std::string notopic = ":ircserv 331 " + client.getNickname() + " " + channelName + " :No topic is set\r\n";
             send(client.getFd(), notopic.c_str(), notopic.length(), 0);
         }
+    }
+}
+
+static void Command::MODE(const vector<string>& params, Client& client, Server& server) {
+    if (params.size() < 2)
+    {
+        Messages::ERR_NEEDMOREPARAMS("MODE");
+        return;
+    }
+
+    string channelName = params[0];
+    string modeChanges = params[1];
+
+    Channel* channel = server.getChannel(channelName);
+
+    if (!channel) {
+        Messages::ERR_NOSUCHCHANNEL(channelName);
+        return;
+    }
+
+    if (!channel->isOperator(client.getNickname())) {
+        Messages::ERR_CHANOPRIVSNEEDED(channelName);
+        return;
+    }
+    
+    if (modeChanges[0] == '+') {
+        for (size_t i = 1; i < modeChanges.length(); ++i) {
+            channel->setMode(modeChanges[i], true);
+        }
+    } else if (modeChanges[0] == '-') {
+        for (size_t i = 1; i < modeChanges.length(); ++i) {
+            channel->setMode(modeChanges[i], false);
+        }
+    } else {
+        Messages::ERR_UNKNOWNMODE(modeChanges);
+        return;
+    }
+    
+
+
+    string modeMsg = ":" + client.getNickname() + " MODE " + channelName + " " + modeChanges + "\r\n";
+    for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
+        send((*it)->getFd(), modeMsg.c_str(), modeMsg.length(), 0);
+    }
+}
+
+static void Command::PRIVMSG(const vector<string>& params, Client& client, Server& server) {
+    if (params.size() < 2)
+    {
+        Messages::ERR_NEEDMOREPARAMS("PRIVMSG");
+        return;
+    }
+
+    string target = params[0];
+    string message = params[1];
+    for (size_t i = 2; i < params.size(); ++i) {
+            message += " " + params[i];
+    }
+
+    if (target[0] == '#') {
+        Channel* channel = server.getChannel(target);
+        if (!channel) {
+            Messages::ERR_NOSUCHCHANNEL(target);
+            return;
+        }
+        if (!channel->hasClient(client.getNickname())) {
+            Messages::ERR_CANNOTSENDTOCHAN(target);
+            return;
+        }
+
+        string privMsg = ":" + client.getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
+        for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
+            if ((*it)->getNickname() != client.getNickname()) {
+                send((*it)->getFd(), privMsg.c_str(), privMsg.length(), 0);
+            }
+        }
+    } else {
+        Client* targetClient = server.getClientByNickname(target);
+        if (!targetClient) {
+            Messages::ERR_NOSUCHNICK(target);
+            return;
+        }
+
+        string privMsg = ":" + client.getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
+        send(targetClient->getFd(), privMsg.c_str(), privMsg.length(), 0);
     }
 }
