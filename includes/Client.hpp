@@ -2,7 +2,6 @@
 #define CLIENT_HPP
 
 #include <string>
-#include "Command.hpp"
 using namespace std;
 
 class Client
@@ -25,21 +24,25 @@ class Client
         ~Client();
 
         int getSocketFd() const;
-        const string& getNname() const;
-        const string& getUname() const;
-        const string& getRname() const;
+        int getFd() const;
+        const string& getNickname() const;
+        const string& getUsername() const;
+        const string& getRealname() const;
         bool isReg() const;
         bool isAuth() const;
+        bool hasSentPass() const;
+        bool hasSentNick() const;
+        bool hasSentUser() const;
 
-        void setRname(const string& realname);
-        void setNname(const string& nickname);
-        void setUname(const string& username);
+        void setRealname(const string& realname);
+        void setNickname(const string& nickname);
+        void setUsername(const string& username);
         void HasSentPass(bool status);
         void HasSentNick(bool status);
         void HasSentUser(bool status);
         void setAuth(bool status);
         void setReg(bool status);
-        const string& getBuffer() const;
+        string& getBuffer();
         void appendToBuffer(const string& data);
         void clearBuffer();
 };

@@ -1,4 +1,7 @@
 #include "../includes/Server.hpp"
+#include "../includes/Command.hpp"
+#include <iostream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -41,28 +44,28 @@ void Server::setupServerSocket() // handles the creation and configuration of th
     pollfd pfd;
     pfd.fd = _serverSocket;
     pfd.events = POLLIN;
-    _pollfds.push_back(pfd);
+    _pollFds.push_back(pfd);
 
     cout << " Server is up and running on port " << _port << endl;
 }
 
 void Server::run() {
     while (true) {
-        int ret = poll(&_pollfds[0], _pollfds.size(), -1); // Waits for events on the monitored file descriptors
+        int ret = poll(&_pollFds[0], _pollFds.size(), -1); // Waits for events on the monitored file descriptors
         if (ret < 0)
             throw runtime_error("Poll failed");
 
-        for (size_t i = 0; i < _pollfds.size(); ++i) // Iterates through all monitored file descriptors
+        for (size_t i = 0; i < _pollFds.size(); ++i) // Iterates through all monitored file descriptors
         {
-            if (_pollfds[i].revents & POLLIN) // Checks if there's data to read
+            if (_pollFds[i].revents & POLLIN) // Checks if there's data to read
             {
-                if (_pollfds[i].fd == _serverSocket) // New incoming connection
+                if (_pollFds[i].fd == _serverSocket) // New incoming connection
                 {
                     acceptNewConnection();
                 }
                 else // Data from existing client
                 {
-                    handleClientData(_pollfds[i].fd);
+                    handleClientData(_pollFds[i].fd);
                 }
             }
         }
@@ -82,7 +85,7 @@ void Server::acceptNewConnection() //accepting new client connections
     pollfd clientPoll;
     clientPoll.fd = clientFd;
     clientPoll.events = POLLIN;
-    _pollfds.push_back(clientPoll);
+    _pollFds.push_back(clientPoll);
 
     string ip = inet_ntoa(clientAddr.sin_addr); // converts the client's IP address to a human-readable string
     _clients[clientFd] = new Client(clientFd, ip);
@@ -103,15 +106,15 @@ void Server::handleClientData(int clientFd) //processes data received from a cli
         Client* client = _clients[clientFd];
         string nick = client->getNickname();
         if (!nick.empty())
-            ManageNickname(nick, nullptr, UNREGISTER);
+            manageNickname(nick, NULL, UNREGISTER);
     
         // Close socket
         close(clientFd);
     
         // Remove from poll list
-        for (size_t i = 0; i < _pollfds.size(); ++i) {
-            if (_pollfds[i].fd == clientFd) {
-                _pollfds.erase(_pollfds.begin() + i);
+        for (size_t i = 0; i < _pollFds.size(); ++i) {
+            if (_pollFds[i].fd == clientFd) {
+                _pollFds.erase(_pollFds.begin() + i);
                 break;
             }
         }
@@ -138,7 +141,7 @@ void Server::handleClientData(int clientFd) //processes data received from a cli
         string displayName = client->getNickname().empty() ? "(unknown)" : client->getNickname();
         cout << "Parsing command from client " << clientFd << " (" << displayName << "): " << commandLine << "\n";
         
-        Command::executeCommand(commandLine, client, *this);
+        Command::executeCommand(commandLine, *client, *this);
     }
     
 }
@@ -146,12 +149,12 @@ void Server::handleClientData(int clientFd) //processes data received from a cli
 bool Server::manageNickname(const string &nickname, Client* client, NicknameOperation op) {
     switch (op) {
         case CHECK:
-            return _nickToClient.find(nickname) != _nickToClient.end();
+            return _registeredNicknames.find(nickname) != _registeredNicknames.end();
         case REGISTER:
-            _nickToClient[nickname] = client;
+            _registeredNicknames[nickname] = client;
             return true;
         case UNREGISTER:
-            _nickToClient.erase(nickname);
+            _registeredNicknames.erase(nickname);
             return true;
         default:
             return false;
@@ -176,7 +179,7 @@ Channel* Server::getChannel(const string& channelName)
 {
     if (_channels.find(channelName) != _channels.end())
         return _channels[channelName];
-    return nullptr;
+    return NULL;
 }
 
 const string& Server::getPassword() const
@@ -196,7 +199,7 @@ Client* Server::getClientByNickname(const string& nickname) const
         if (it->second->getNickname() == nickname)
             return it->second;
     }
-    return nullptr;
+    return NULL;
 }
 
 /*

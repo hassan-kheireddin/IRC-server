@@ -6,7 +6,6 @@
 #include <set>
 #include <memory>
 #include "Client.hpp"
-#include "Server.hpp"
 
 using namespace std;
 

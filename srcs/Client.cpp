@@ -1,7 +1,7 @@
 #include "../includes/Client.hpp"
 using namespace std;
 
-Client::Client(int socketFd, const string& ipAddr) : _socketFd(socketFd), _ipAddr(ipAddr), _isRegistered(false), _isAuthenticated(false), _hasSentPass(false), _hasSentNick(false), _hasSentUser(false) {}
+Client::Client(int socketFd, const string& ipAddr) : _socketFd(socketFd), _ipAddr(ipAddr), _nickname(""), _username(""), _realname(""), _buffer(""), _hasSentPass(false), _hasSentNick(false), _hasSentUser(false), _isRegistered(false), _isAuthenticated(false) {}
 
 Client::~Client() {}
 
@@ -10,17 +10,22 @@ int Client::getSocketFd() const
     return _socketFd;
 }
 
-const string& Client::getNname() const
+int Client::getFd() const
+{
+    return _socketFd;
+}
+
+const string& Client::getNickname() const
 {
     return _nickname;
 }
 
-const string& Client::getUname() const
+const string& Client::getUsername() const
 {
     return _username;
 }
 
-const string& Client::getRname() const
+const string& Client::getRealname() const
 {
     return _realname;
 }
@@ -33,6 +38,21 @@ bool Client::isReg() const
 bool Client::isAuth() const
 {
     return _isAuthenticated;
+}
+
+bool Client::hasSentPass() const
+{
+    return _hasSentPass;
+}
+
+bool Client::hasSentNick() const
+{
+    return _hasSentNick;
+}
+
+bool Client::hasSentUser() const
+{
+    return _hasSentUser;
 }
 
 void Client::HasSentPass(bool status)
@@ -50,17 +70,17 @@ void Client::HasSentUser(bool status)
     _hasSentUser = status;
 }
 
-void Client::setNname(const string& nickname)
+void Client::setNickname(const string& nickname)
 {
     _nickname = nickname;
 }
 
-void Client::setUname(const string& username)
+void Client::setUsername(const string& username)
 {
     _username = username;
 }
 
-void Client::setRname(const string& realname)
+void Client::setRealname(const string& realname)
 {
     _realname = realname;
 }
@@ -75,7 +95,7 @@ void Client::setAuth(bool status)
     _isAuthenticated = status;
 }
 
-const string& Client::getBuffer() const
+string& Client::getBuffer()
 {
     return _buffer;
 }
