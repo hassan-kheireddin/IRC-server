@@ -1,6 +1,6 @@
 #include "../includes/Channel.hpp"
 
-Channel::Channel(const std::string& name) : _name(name), _topic(""), _key(""), _hasKey(false), _userLimit(0), _hasUserLimit(false) {}
+Channel::Channel(const std::string& name) : _name(name), _topic(""), _key(""), _userLimit(0) {}
 
 Channel::~Channel() {}
 

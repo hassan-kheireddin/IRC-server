@@ -16,9 +16,7 @@ class Channel {
     std::set<Client*> _invited;
     std::set<char> _modes;
     std::string _key;
-    bool _hasKey;
     size_t _userLimit;
-    bool _hasUserLimit;
         
     public:
         Channel(const std::string& name);
