@@ -10,6 +10,18 @@ Server::Server(int port, const std::string& password) : _port(port), _password(p
 
 Server::~Server()
 {
+    // Delete all clients
+    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+        delete it->second;
+    }
+    _clients.clear();
+
+    // Delete all channels
+    for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+        delete it->second;
+    }
+    _channels.clear();
+
     close(_serverSocket);
 }
 
