@@ -7,8 +7,6 @@
 #include <memory>
 #include "Client.hpp"
 
-using namespace std;
-
 class Channel {
     private:
     std::string _name;
@@ -26,42 +24,42 @@ class Channel {
         Channel(const std::string& name);
         ~Channel();
 
-        const string& getName() const;
-        const string& getTopic() const;
-        void setTopic(const string& topic);
+        const std::string& getName() const;
+        const std::string& getTopic() const;
+        void setTopic(const std::string& topic);
 
         void addClient(Client* client);
         void removeClient(Client* client);
-        void removeClient(const string& nickname);
+        void removeClient(const std::string& nickname);
         bool hasClient(Client* client) const;
-        bool hasClient(const string& nickname) const;
+        bool hasClient(const std::string& nickname) const;
 
         void setOperator(Client* client);
-        void setOperator(const string& nickname);
-        const string& getOperator() const;
+        void setOperator(const std::string& nickname);
+        const std::string& getOperator() const;
         bool isOperator(Client* client) const;
-        bool isOperator(const string& nickname) const;
+        bool isOperator(const std::string& nickname) const;
         void removeOperator(Client* client);
 
         void inviteClient(Client* client);
         bool isInviteOnly() const;
         void addInvitation(Client* client);
-        void addInvitation(const string& nickname);
+        void addInvitation(const std::string& nickname);
         void removeInvitation(Client* client);
-        void removeInvitation(const string& nickname);
+        void removeInvitation(const std::string& nickname);
         bool isInvited(Client* client) const;
-        bool isInvited(const string& nickname) const;
+        bool isInvited(const std::string& nickname) const;
 
-        const set<Client*>& getClients() const;
+        const std::set<Client*>& getClients() const;
 
 
         void addMode(char mode);
         void removeMode(char mode);
         bool hasMode(char mode) const;
-        string getModes() const;
+        std::string getModes() const;
 
-        void setKey(const string& key);
-        const string& getKey() const;
+        void setKey(const std::string& key);
+        const std::string& getKey() const;
         void removeKey();
         bool hasKey() const;
 

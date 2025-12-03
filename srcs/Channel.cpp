@@ -1,20 +1,18 @@
 #include "../includes/Channel.hpp"
 
-using namespace std;
-
 Channel::Channel(const std::string& name) : _name(name), _topic(""), _key(""), _hasKey(false), _userLimit(0), _hasUserLimit(false) {}
 
 Channel::~Channel() {}
 
-const string& Channel::getName() const {
+const std::string& Channel::getName() const {
     return _name;
 }
 
-const string& Channel::getTopic() const {
+const std::string& Channel::getTopic() const {
     return _topic;
 }
 
-void Channel::setTopic(const string& topic) {
+void Channel::setTopic(const std::string& topic) {
     _topic = topic;
 }
 
@@ -29,8 +27,8 @@ void Channel::removeClient(Client* client) {
     _clients.erase(client);
 }
 
-void Channel::removeClient(const string& nickname) {
-    for (set<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+void Channel::removeClient(const std::string& nickname) {
+    for (std::set<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
         if ((*it)->getNickname() == nickname) {
             if (isOperator(*it)) {
                 removeOperator(*it);
@@ -45,8 +43,8 @@ bool Channel::hasClient(Client* client) const {
     return _clients.find(client) != _clients.end();
 }
 
-bool Channel::hasClient(const string& nickname) const {
-    for (set<Client*>::const_iterator it = _clients.begin(); it != _clients.end(); ++it) {
+bool Channel::hasClient(const std::string& nickname) const {
+    for (std::set<Client*>::const_iterator it = _clients.begin(); it != _clients.end(); ++it) {
         if ((*it)->getNickname() == nickname)
             return true;
     }
@@ -57,8 +55,8 @@ void Channel::setOperator(Client* client) {
     _operators.insert(client);
 }
 
-void Channel::setOperator(const string& nickname) {
-    for (set<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+void Channel::setOperator(const std::string& nickname) {
+    for (std::set<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
         if ((*it)->getNickname() == nickname) {
             _operators.insert(*it);
             return;
@@ -66,8 +64,8 @@ void Channel::setOperator(const string& nickname) {
     }
 }
 
-const string& Channel::getOperator() const {
-    static string empty = "";
+const std::string& Channel::getOperator() const {
+    static std::string empty = "";
     if (_operators.empty())
         return empty;
     return (*_operators.begin())->getNickname();
@@ -77,8 +75,8 @@ bool Channel::isOperator(Client* client) const {
     return _operators.find(client) != _operators.end();
 }
 
-bool Channel::isOperator(const string& nickname) const {
-    for (set<Client*>::const_iterator it = _operators.begin(); it != _operators.end(); ++it) {
+bool Channel::isOperator(const std::string& nickname) const {
+    for (std::set<Client*>::const_iterator it = _operators.begin(); it != _operators.end(); ++it) {
         if ((*it)->getNickname() == nickname)
             return true;
     }
@@ -101,8 +99,8 @@ void Channel::addInvitation(Client* client) {
     _invited.insert(client);
 }
 
-void Channel::addInvitation(const string& nickname) {
-    for (set<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+void Channel::addInvitation(const std::string& nickname) {
+    for (std::set<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
         if ((*it)->getNickname() == nickname) {
             _invited.insert(*it);
             return;
@@ -115,8 +113,8 @@ void Channel::removeInvitation(Client* client) {
     _invited.erase(client);
 }
 
-void Channel::removeInvitation(const string& nickname) {
-    for (set<Client*>::iterator it = _invited.begin(); it != _invited.end(); ++it) {
+void Channel::removeInvitation(const std::string& nickname) {
+    for (std::set<Client*>::iterator it = _invited.begin(); it != _invited.end(); ++it) {
         if ((*it)->getNickname() == nickname) {
             _invited.erase(it);
             return;
@@ -128,15 +126,15 @@ bool Channel::isInvited(Client* client) const {
     return _invited.find(client) != _invited.end();
 }
 
-bool Channel::isInvited(const string& nickname) const {
-    for (set<Client*>::const_iterator it = _invited.begin(); it != _invited.end(); ++it) {
+bool Channel::isInvited(const std::string& nickname) const {
+    for (std::set<Client*>::const_iterator it = _invited.begin(); it != _invited.end(); ++it) {
         if ((*it)->getNickname() == nickname)
             return true;
     }
     return false;
 }
 
-const set<Client*>& Channel::getClients() const {
+const std::set<Client*>& Channel::getClients() const {
     return _clients;
 }
 
@@ -152,20 +150,20 @@ bool Channel::hasMode(char mode) const {
     return _modes.find(mode) != _modes.end();
 }
 
-string Channel::getModes() const {
-    string modes;
-    for (set<char>::const_iterator it = _modes.begin(); it != _modes.end(); ++it) {
+std::string Channel::getModes() const {
+    std::string modes;
+    for (std::set<char>::const_iterator it = _modes.begin(); it != _modes.end(); ++it) {
         modes += *it;
     }
     return modes;
 }
 
 
-void Channel::setKey(const string& key) {
+void Channel::setKey(const std::string& key) {
     _key = key;
 }
 
-const string& Channel::getKey() const {
+const std::string& Channel::getKey() const {
     return _key;
 }
 

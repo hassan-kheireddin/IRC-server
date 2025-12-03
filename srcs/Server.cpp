@@ -3,9 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 
-using namespace std;
-
-Server::Server(int port, const string& password) : _port(port), _password(password), _serverSocket(-1)
+Server::Server(int port, const std::string& password) : _port(port), _password(password), _serverSocket(-1)
 {
     setupServerSocket();
 }
@@ -20,24 +18,20 @@ void Server::setupServerSocket() // handles the creation and configuration of th
     _serverSocket = socket(AF_INET, SOCK_STREAM, 0); // socket():creates a new socket| AF_INET:use IPv4| SOCK_STREAM: Socket type (TCP) | 0: Default protocol
     
     if (_serverSocket < 0)
-        throw runtime_error("Failed to create socket");
+        throw std::runtime_error("Failed to create socket");
 
+    // Configure socket options
     int opt = 1;
-    // SO_REUSEADDR allows immediate reuse of the port
     if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
         close(_serverSocket);
-        throw runtime_error("setsockopt SO_REUSEADDR failed");
+        throw std::runtime_error("setsockopt SO_REUSEADDR failed");
     }
 
-    // SO_REUSEPORT allows multiple sockets to bind to the same port (optional, for load balancing)
-    #ifdef SO_REUSEPORT
-    if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) < 0) {
+    // Set socket to non-blocking mode
+    if (fcntl(_serverSocket, F_SETFL, O_NONBLOCK) < 0) {
         close(_serverSocket);
-        throw runtime_error("setsockopt SO_REUSEPORT failed");
+        throw std::runtime_error("Failed to set socket to non-blocking mode");
     }
-    #endif
-
-    fcntl(_serverSocket, F_SETFL, O_NONBLOCK);// Sets socket to non-blocking mode
     
     // IPv4 Structure for server address
     sockaddr_in serverAddr;
@@ -48,12 +42,12 @@ void Server::setupServerSocket() // handles the creation and configuration of th
 
     if (bind(_serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) { // Binds socket to the specified port on the local machine
         close(_serverSocket);
-        throw runtime_error("Bind failed - port may already be in use");
+        throw std::runtime_error("Bind failed - port may already be in use");
     }
 
     if (listen(_serverSocket, 10) < 0) { // Prepares it to listen for incoming connections
         close(_serverSocket);
-        throw runtime_error("Listen failed");
+        throw std::runtime_error("Listen failed");
     }
 
     pollfd pfd;
@@ -61,14 +55,14 @@ void Server::setupServerSocket() // handles the creation and configuration of th
     pfd.events = POLLIN;
     _pollFds.push_back(pfd);
 
-    cout << " Server is up and running on port " << _port << endl;
+    std::cout << " Server is up and running on port " << _port << std::endl;
 }
 
 void Server::run() {
     while (true) {
         int ret = poll(&_pollFds[0], _pollFds.size(), -1); // Waits for events on the monitored file descriptors
         if (ret < 0)
-            throw runtime_error("Poll failed");
+            throw std::runtime_error("Poll failed");
 
         for (size_t i = 0; i < _pollFds.size(); ++i) // Iterates through all monitored file descriptors
         {
@@ -102,10 +96,10 @@ void Server::acceptNewConnection() //accepting new client connections
     clientPoll.events = POLLIN;
     _pollFds.push_back(clientPoll);
 
-    string ip = inet_ntoa(clientAddr.sin_addr); // converts the client's IP address to a human-readable string
+    std::string ip = inet_ntoa(clientAddr.sin_addr); // converts the client's IP address to a human-readable string
     _clients[clientFd] = new Client(clientFd, ip);
 
-    cout << "New client connected: " << clientFd << " (IP: " << ip << ")\n";
+    std::cout << "New client connected: " << clientFd << " (IP: " << ip << ")\n";
 }
 
 void Server::handleClientData(int clientFd) //processes data received from a client
@@ -115,11 +109,11 @@ void Server::handleClientData(int clientFd) //processes data received from a cli
     ssize_t bytes = recv(clientFd, buffer, sizeof(buffer), 0); // Receives data from the client
 
     if (bytes <= 0) {
-        cout << "Client disconnected: " << clientFd << "\n";
+        std::cout << "Client disconnected: " << clientFd << "\n";
     
         // Cleanup nickname if set
         Client* client = _clients[clientFd];
-        string nick = client->getNickname();
+        std::string nick = client->getNickname();
         if (!nick.empty())
             manageNickname(nick, NULL, UNREGISTER);
     
@@ -142,26 +136,26 @@ void Server::handleClientData(int clientFd) //processes data received from a cli
     
 
     Client* client = _clients[clientFd];
-    client->appendToBuffer(string(buffer, bytes)); // Append received data to client's buffer
+    client->appendToBuffer(std::string(buffer, bytes)); // Append received data to client's buffer
 
-    string& fullBuffer = client->getBuffer(); // Reference to client's buffer
+    std::string& fullBuffer = client->getBuffer(); // Reference to client's buffer
     size_t pos;
-    while ((pos = fullBuffer.find("\n")) != string::npos) // Process complete commands (terminated by newline)
+    while ((pos = fullBuffer.find("\n")) != std::string::npos) // Process complete commands (terminated by newline)
     {
-        string commandLine = fullBuffer.substr(0, pos);
+        std::string commandLine = fullBuffer.substr(0, pos);
         if (!commandLine.empty() && commandLine[commandLine.length() - 1] == '\r')
             commandLine = commandLine.substr(0, commandLine.length() - 1);
         fullBuffer.erase(0, pos + 1);
     
-        string displayName = client->getNickname().empty() ? "(unknown)" : client->getNickname();
-        cout << "Parsing command from client " << clientFd << " (" << displayName << "): " << commandLine << "\n";
+        std::string displayName = client->getNickname().empty() ? "(unknown)" : client->getNickname();
+        std::cout << "Parsing command from client " << clientFd << " (" << displayName << "): " << commandLine << "\n";
         
         Command::executeCommand(commandLine, *client, *this);
     }
     
 }
 
-bool Server::manageNickname(const string &nickname, Client* client, NicknameOperation op) {
+bool Server::manageNickname(const std::string &nickname, Client* client, NicknameOperation op) {
     switch (op) {
         case CHECK:
             return _registeredNicknames.find(nickname) != _registeredNicknames.end();
@@ -182,7 +176,7 @@ bool Server::manageNickname(const string &nickname, Client* client, NicknameOper
 // server.manageNickname("nick", nullptr, UNREGISTER);
 
 
-Channel* Server::createOrGetChannel(const string& channelName)
+Channel* Server::createOrGetChannel(const std::string& channelName)
 {
     if (_channels.find(channelName) == _channels.end())
         _channels[channelName] = new Channel(channelName);
@@ -190,26 +184,26 @@ Channel* Server::createOrGetChannel(const string& channelName)
     return _channels[channelName];
 }
 
-Channel* Server::getChannel(const string& channelName)
+Channel* Server::getChannel(const std::string& channelName)
 {
     if (_channels.find(channelName) != _channels.end())
         return _channels[channelName];
     return NULL;
 }
 
-const string& Server::getPassword() const
+const std::string& Server::getPassword() const
 {
     return _password;
 }
 
-const map<int, Client*>& Server::getClients() const
+const std::map<int, Client*>& Server::getClients() const
 {
     return _clients;
 }
 
-Client* Server::getClientByNickname(const string& nickname) const
+Client* Server::getClientByNickname(const std::string& nickname) const
 {
-    for (map<int, Client*>::const_iterator it = _clients.begin(); it != _clients.end(); ++it)
+    for (std::map<int, Client*>::const_iterator it = _clients.begin(); it != _clients.end(); ++it)
     {
         if (it->second->getNickname() == nickname)
             return it->second;

@@ -1,13 +1,11 @@
 #include "../includes/Command.hpp"
 #include <iostream>
 
-using namespace std;
+void Command::executeCommand(const std::string& commandLine, Client& client, Server& server) {
 
-void Command::executeCommand(const string& commandLine, Client& client, Server& server) {
-
-    vector<string> tokens;
+    std::vector<std::string> tokens;
     size_t pos = 0, found;
-    while((found = commandLine.find_first_of(' ', pos)) != string::npos) {
+    while((found = commandLine.find_first_of(' ', pos)) != std::string::npos) {
         tokens.push_back(commandLine.substr(pos, found - pos));
         pos = found + 1;
     }
@@ -15,8 +13,8 @@ void Command::executeCommand(const string& commandLine, Client& client, Server& 
 
     if (tokens.empty()) return;
 
-    string command = tokens[0];
-    vector<string> params(tokens.begin() + 1, tokens.end());
+    std::string command = tokens[0];
+    std::vector<std::string> params(tokens.begin() + 1, tokens.end());
 
     if (command == "PASS") {
         PASS(params, client, server);
@@ -40,78 +38,78 @@ void Command::executeCommand(const string& commandLine, Client& client, Server& 
         PRIVMSG(params, client, server);
     }
     else {
-        cout << "Error: Unknown command " << command << "." << endl;
+        std::cout << "Error: Unknown command " << command << "." << std::endl;
     }
 }
 
 void Command::AUTHENTICATE(Client& client, Server& server) {
         (void)server;
         if (client.isAuth()) {
-            cout << "Error: client " << client.getNickname() << " is already authenticated." << endl;
+            std::cout << "Error: client " << client.getNickname() << " is already authenticated." << std::endl;
             return;
         }
         if (client.hasSentPass() && client.hasSentNick() && client.hasSentUser()) {
             client.setAuth(true);
-            cout << client.getNickname() << ", You have been successfully authenticated!" << endl;
+            std::cout << client.getNickname() << ", You have been successfully authenticated!" << std::endl;
         } else {
-            cout << "Error: client " << client.getNickname() << " is not authenticated. You Should provide Password for the Server, Nickname and Username." << endl;
+            std::cout << "Error: client " << client.getNickname() << " is not authenticated. You Should provide Password for the Server, Nickname and Username." << std::endl;
         }
 }
 
-void Command::PASS(const vector<string>& params, Client& client, Server& server) {
+void Command::PASS(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() < 1)
     {
-        cout << "Error: Not enough parameters for command PASS." << endl;
+        std::cout << "Error: Not enough parameters for command PASS." << std::endl;
         return;
     }
 
     if (client.isReg()) {
-        cout << "Error: client " << client.getNickname() << " is already registered." << endl;
+        std::cout << "Error: client " << client.getNickname() << " is already registered." << std::endl;
         return;
     }
 
     if (params[0] == server.getPassword()) {
         client.setReg(true);
         client.HasSentPass(true);
-        cout << client.getNickname() << ", Welcome to the server! If you want to Join Channels you must be authenticated." << endl;
+        std::cout << client.getNickname() << ", Welcome to the server! If you want to Join Channels you must be authenticated." << std::endl;
     } else {
-        cout << "Error: Password mismatch for client." << endl;
+        std::cout << "Error: Password mismatch for client." << std::endl;
     }
 }
 
-void Command::NICK(const vector<string>& params, Client& client, Server& server) {
+void Command::NICK(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() < 1)
     {
-        string error = "Error: Not enough parameters for command NICK\r\n";
+        std::string error = "Error: Not enough parameters for command NICK\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
-        cout << "Error: Not enough parameters for command NICK." << endl;
+        std::cout << "Error: Not enough parameters for command NICK." << std::endl;
         return;
     }
 
-    string nickname = params[0];
+    std::string nickname = params[0];
 
     if (nickname.empty()) {
-        string error = "Error: No nickname given\r\n";
+        std::string error = "Error: No nickname given\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
-        cout << "Error: No nickname given." << endl;
+        std::cout << "Error: No nickname given." << std::endl;
         return;
     }
 
     if (!isValidNickname(nickname)) {
-        string error = "Error: Erroneous nickname " + nickname + ".\r\n";
+        std::string error = "Error: Erroneous nickname " + nickname + ".\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
-        cout << "Error: Erroneous nickname " << nickname << "." << endl;
+        std::cout << "Error: Erroneous nickname " << nickname << "." << std::endl;
         return;
     }
 
     if (server.manageNickname(nickname, NULL, CHECK)) {
-        string error = "Error: Nickname " + nickname + " is already in use.\r\n";
+        std::string error = "Error: Nickname " + nickname + " is already in use.\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
-        cout << "Error: Nickname " << nickname << " is already in use." << endl;
+        std::cout << "Error: Nickname " << nickname << " is already in use." << std::endl;
         return;
     }
 
-    string oldNickname = client.getNickname();
+    std::string oldNickname = client.getNickname();
     if (!oldNickname.empty()) {
         server.manageNickname(oldNickname, NULL, UNREGISTER);
     }
@@ -121,7 +119,7 @@ void Command::NICK(const vector<string>& params, Client& client, Server& server)
     client.HasSentNick(true);
 }
 
-bool Command::isValidNickname(const string& nickname) {
+bool Command::isValidNickname(const std::string& nickname) {
     if (nickname.empty() || nickname.length() > 9)
         return false;
 
@@ -137,11 +135,11 @@ bool Command::isValidNickname(const string& nickname) {
     return true;
 }
 
-void Command::USER(const vector<string>& params, Client& client, Server& server) {
+void Command::USER(const std::vector<std::string>& params, Client& client, Server& server) {
     (void)server;
     if (params.size() < 4)
     {
-        cout << "Error: Not enough parameters for command USER." << endl;
+        std::cout << "Error: Not enough parameters for command USER." << std::endl;
         return;
     }
 
@@ -151,27 +149,27 @@ void Command::USER(const vector<string>& params, Client& client, Server& server)
 }
 
 
-void Command::JOIN(const vector<string>& params, Client& client, Server& server) {
+void Command::JOIN(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
-        string error1 = "Error: Not enough parameters for command JOIN\r\n";
+        std::string error1 = "Error: Not enough parameters for command JOIN\r\n";
         send(client.getFd(), error1.c_str(), error1.length(), 0);
-        cout << "Error: Not enough parameters for command JOIN." << endl;
+        std::cout << "Error: Not enough parameters for command JOIN." << std::endl;
         return;
     }
     if (!client.isAuth()) {
-        string error2 = "Error: Client not authenticated\r\n";
+        std::string error2 = "Error: Client not authenticated\r\n";
         send(client.getFd(), error2.c_str(), error2.length(), 0);
-        cout << "Error: client " << client.getNickname() << " is not authenticated. You Should provide Password for the Server, Nickname and Username." << endl;
+        std::cout << "Error: client " << client.getNickname() << " is not authenticated. You Should provide Password for the Server, Nickname and Username." << std::endl;
         return;
     }
 
-    const string channelName = params[0];
-    const string channelKey = params[1];
+    const std::string channelName = params[0];
+    const std::string channelKey = params[1];
     if (channelName.empty() || channelName[0] != '#') {
-        string error3 = "Error: Invalid channel name " + channelName + ".\r\n";
+        std::string error3 = "Error: Invalid channel name " + channelName + ".\r\n";
         send(client.getFd(), error3.c_str(), error3.length(), 0);
-        cout << "Error: No such channel " << channelName << "." << endl;
+        std::cout << "Error: No such channel " << channelName << "." << std::endl;
         return;
     }
 
@@ -179,26 +177,26 @@ void Command::JOIN(const vector<string>& params, Client& client, Server& server)
 
 
     if (channel->isInviteOnly() && !channel->isInvited(client.getNickname())) {
-        string error4 = "Error: Channel " + channelName + " is invite-only. (+i)\r\n";
+        std::string error4 = "Error: Channel " + channelName + " is invite-only. (+i)\r\n";
         send(client.getFd(), error4.c_str(), error4.length(), 0);
-        cout << "Error: Channel " << channelName << " is invite-only. (+i)" << endl;
+        std::cout << "Error: Channel " << channelName << " is invite-only. (+i)" << std::endl;
         return;
     }
 
     if (channel->hasKey()) {
         if (channelKey != channel->getKey()) {
-            string error5 = "Error: Bad channel key for " + channelName + ". (+k)\r\n";
+            std::string error5 = "Error: Bad channel key for " + channelName + ". (+k)\r\n";
             send(client.getFd(), error5.c_str(), error5.length(), 0);
-            cout << "Error: Bad channel key for channel (+k)" << channelName << "." << endl;
+            std::cout << "Error: Bad channel key for channel (+k)" << channelName << "." << std::endl;
             return;
         }
     }
 
     if (channel->hasClientLimit()) {
         if (channel->isFull()) {
-            string error6 = "Error: Channel " + channelName + " is full. (+l)\r\n";
+            std::string error6 = "Error: Channel " + channelName + " is full. (+l)\r\n";
             send(client.getFd(), error6.c_str(), error6.length(), 0);
-            cout << "Error: Channel " << channelName << " is full. (+l)" << endl;
+            std::cout << "Error: Channel " << channelName << " is full. (+l)" << std::endl;
             return;
         }
     }
@@ -212,23 +210,23 @@ void Command::JOIN(const vector<string>& params, Client& client, Server& server)
 
     channel->removeInvitation(client.getNickname());
 
-    string joinMsg = ":" + client.getNickname() + " JOIN " + channelName + "\r\n";
-    for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it){
+    std::string joinMsg = ":" + client.getNickname() + " JOIN " + channelName + "\r\n";
+    for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it){
         send((*it)->getFd(), joinMsg.c_str(), joinMsg.length(), 0);
     }
 
     if (!channel->getTopic().empty()) {
-        string topicMsg = client.getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
+        std::string topicMsg = client.getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
         send(client.getFd(), topicMsg.c_str(), topicMsg.length(), 0);
-        cout << "Topic for channel " << channelName << " is: " << channel->getTopic() << endl;
+        std::cout << "Topic for channel " << channelName << " is: " << channel->getTopic() << std::endl;
     } else {
-        string noTopicMsg = client.getNickname() + " " + channelName + " :No topic is set\r\n";
+        std::string noTopicMsg = client.getNickname() + " " + channelName + " :No topic is set\r\n";
         send(client.getFd(), noTopicMsg.c_str(), noTopicMsg.length(), 0);
-        cout << "No topic is set for channel " << channelName << "." << endl;
+        std::cout << "No topic is set for channel " << channelName << "." << std::endl;
     }
 
-    string namesList = client.getNickname() + "=" + channelName + " :";
-    for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
+    std::string namesList = client.getNickname() + "=" + channelName + " :";
+    for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
         if (channel->isOperator(*it)) {
             namesList += "@" + (*it)->getNickname() + " ";
         } else {
@@ -239,112 +237,112 @@ void Command::JOIN(const vector<string>& params, Client& client, Server& server)
     send(client.getFd(), namesList.c_str(), namesList.length(), 0);
 }
 
-void Command::KICK(const vector<string>& params, Client& client, Server& server) {
+void Command::KICK(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() < 3)
     {
-        cout << "Error: Not enough parameters for command KICK." << endl;
+        std::cout << "Error: Not enough parameters for command KICK." << std::endl;
         return;
     }
-    string channelName = params[0];
-    string targetNickname = params[1];
-    string comment = params[2];
+    std::string channelName = params[0];
+    std::string targetNickname = params[1];
+    std::string comment = params[2];
 
     Channel* channel = server.getChannel(channelName);
     if (!channel) {
-        cout << "Error: No such channel " << channelName << "." << endl;
+        std::cout << "Error: No such channel " << channelName << "." << std::endl;
         return;
 
     }
     if (!channel->isOperator(client.getNickname())) {
-        cout << "Error: You need channel operator privileges for channel " << channelName << "." << endl;
+        std::cout << "Error: You need channel operator privileges for channel " << channelName << "." << std::endl;
         return;
     }
     Client* targetClient = server.getClientByNickname(targetNickname);
 
     if (!targetClient || !channel->hasClient(targetNickname)) {
-        cout << "Error: client " << targetNickname << " is not in channel " << channelName << "." << endl;
+        std::cout << "Error: client " << targetNickname << " is not in channel " << channelName << "." << std::endl;
         return;
     }
 
     channel->removeClient(targetNickname);
     
-    string kickMsg = ":" + client.getNickname() + " KICK " + channelName + " " + targetNickname + " :" + comment + "\r\n";
-    for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
+    std::string kickMsg = ":" + client.getNickname() + " KICK " + channelName + " " + targetNickname + " :" + comment + "\r\n";
+    for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
         send((*it)->getFd(), kickMsg.c_str(), kickMsg.length(), 0);
     }
 }
 
 
-void Command::INVITE(const vector<string>& params, Client& client, Server& server) {
+void Command::INVITE(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
-        cout << "Error: Not enough parameters for command INVITE." << endl;
+        std::cout << "Error: Not enough parameters for command INVITE." << std::endl;
         return;
     }
-    string targetNickname = params[0];
-    string channelName = params[1];
+    std::string targetNickname = params[0];
+    std::string channelName = params[1];
 
     Channel* channel = server.getChannel(channelName);
     if (!channel) {
-        cout << "Error: No such channel " << channelName << "." << endl;
+        std::cout << "Error: No such channel " << channelName << "." << std::endl;
         return;
     }
     if (!channel->isOperator(client.getNickname())) {
-        cout << "Error: You need channel operator privileges for channel " << channelName << "." << endl;
+        std::cout << "Error: You need channel operator privileges for channel " << channelName << "." << std::endl;
         return;
     }
     Client* targetClient = server.getClientByNickname(targetNickname);
     if (!targetClient) {
-        cout << "Error: No such nick " << targetNickname << "." << endl;
+        std::cout << "Error: No such nick " << targetNickname << "." << std::endl;
         return;
     }
 
     if (channel->hasClient(targetNickname)) {
-        cout << "Error: client " << targetNickname << " is already on channel " << channelName << "." << endl;
+        std::cout << "Error: client " << targetNickname << " is already on channel " << channelName << "." << std::endl;
         return;
     }
 
     if (channel->isInvited(targetNickname)) {
-        cout << "Error: client " << targetNickname << " is already on channel " << channelName << "." << endl;
+        std::cout << "Error: client " << targetNickname << " is already on channel " << channelName << "." << std::endl;
         return;
     }
 
     channel->addInvitation(targetNickname);
 
-    string inviteMsg = ":" + client.getNickname() + " INVITE " + targetNickname + " :" + channelName + "\r\n";
+    std::string inviteMsg = ":" + client.getNickname() + " INVITE " + targetNickname + " :" + channelName + "\r\n";
     send(targetClient->getFd(), inviteMsg.c_str(), inviteMsg.length(), 0);
 }
 
-void Command::TOPIC(const vector<string>& params, Client& client, Server& server) {
+void Command::TOPIC(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
-        cout << "Error: Not enough parameters for command TOPIC." << endl;
+        std::cout << "Error: Not enough parameters for command TOPIC." << std::endl;
         return;
     }
 
-    string channelName = params[0];
+    std::string channelName = params[0];
 
     Channel* channel = server.getChannel(channelName);
     if (!channel) {
-        cout << "Error: No such channel " << channelName << "." << endl;
+        std::cout << "Error: No such channel " << channelName << "." << std::endl;
         return;
     }
 
     if (!channel->hasClient(client.getNickname())) {
-        cout << "Error: You are not in channel " << channelName << "." << endl;
+        std::cout << "Error: You are not in channel " << channelName << "." << std::endl;
         return;
     }
 
     // SET TOPIC
     if (params.size() >= 2) {
         if (channel->hasMode('t') && !channel->isOperator(&client)) {
-            string error = ":ircserv 482 " + channelName + " :You're not a channel operator\r\n";
+            std::string error = ":ircserv 482 " + channelName + " :You're not a channel operator\r\n";
             send(client.getFd(), error.c_str(), error.length(), 0);
             return;
         }
 
         // Combine topic text
-        string newTopic = params[1];
+        std::string newTopic = params[1];
         for (size_t i = 2; i < params.size(); ++i) {
             newTopic += " " + params[i];
         }
@@ -354,55 +352,55 @@ void Command::TOPIC(const vector<string>& params, Client& client, Server& server
 
         channel->setTopic(newTopic);
 
-        string topicMsg = ":" + client.getNickname() + " TOPIC " + channelName + " :" + newTopic + "\r\n";
-        for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
+        std::string topicMsg = ":" + client.getNickname() + " TOPIC " + channelName + " :" + newTopic + "\r\n";
+        for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
             send((*it)->getFd(), topicMsg.c_str(), topicMsg.length(), 0);
         }
     }
     // VIEW TOPIC
     else {
         if (!channel->getTopic().empty()) {
-            string topic = ":ircserv 332 " + client.getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
+            std::string topic = ":ircserv 332 " + client.getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
             send(client.getFd(), topic.c_str(), topic.length(), 0);
         } else {
-            string notopic = ":ircserv 331 " + client.getNickname() + " " + channelName + " :No topic is set\r\n";
+            std::string notopic = ":ircserv 331 " + client.getNickname() + " " + channelName + " :No topic is set\r\n";
             send(client.getFd(), notopic.c_str(), notopic.length(), 0);
         }
     }
 }
 
-void Command::MODE(const vector<string>& params, Client& client, Server& server) {
+void Command::MODE(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
-        cout << "Error: Not enough parameters for command MODE." << endl;
+        std::cout << "Error: Not enough parameters for command MODE." << std::endl;
         return;
     }
 
-    string channelName = params[0];
-    string modeChanges = params[1];
+    std::string channelName = params[0];
+    std::string modeChanges = params[1];
 
     Channel* channel = server.getChannel(channelName);
 
     if (!channel) {
-        cout << "Error: No such channel " << channelName << "." << endl;
+        std::cout << "Error: No such channel " << channelName << "." << std::endl;
         return;
     }
 
     if (!channel->isOperator(client.getNickname())) {
-        cout << "Error: You need channel operator privileges for channel " << channelName << "." << endl;
+        std::cout << "Error: You need channel operator privileges for channel " << channelName << "." << std::endl;
         return;
     }
     
     char sign = modeChanges[0];
     if (sign != '+' && sign != '-') {
-        string error = ":ircserv 472 " + modeChanges + " :is unknown mode char\r\n";
+        std::string error = ":ircserv 472 " + modeChanges + " :is unknown mode char\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
         return;
     }
 
     size_t argIndex = 2;
 
-    string modesConfirmed = ":" + client.getNickname() + " MODE " + channelName + " " + modeChanges;
+    std::string modesConfirmed = ":" + client.getNickname() + " MODE " + channelName + " " + modeChanges;
 
     for (size_t i = 1; i < modeChanges.length(); ++i) {
         char mode = modeChanges[i];
@@ -425,7 +423,7 @@ void Command::MODE(const vector<string>& params, Client& client, Server& server)
             case 'k':
                 if (sign == '+') {
                     if (params.size() <= argIndex) {
-                        string error = ":ircserv 461 MODE :Missing key parameter for +k\r\n";
+                        std::string error = ":ircserv 461 MODE :Missing key parameter for +k\r\n";
                         send(client.getFd(), error.c_str(), error.length(), 0);
                         return;
                     }
@@ -438,7 +436,7 @@ void Command::MODE(const vector<string>& params, Client& client, Server& server)
             case 'l':
                 if (sign == '+') {
                     if (params.size() <= argIndex) {
-                        string error = ":ircserv 461 MODE :Missing parameter for +l\r\n";
+                        std::string error = ":ircserv 461 MODE :Missing parameter for +l\r\n";
                         send(client.getFd(), error.c_str(), error.length(), 0);
                         return;
                     }
@@ -448,7 +446,7 @@ void Command::MODE(const vector<string>& params, Client& client, Server& server)
                         if (params[argIndex][j] >= '0' && params[argIndex][j] <= '9') {
                             limit = limit * 10 + (params[argIndex][j] - '0');
                         } else {
-                            string error = ":ircserv 461 MODE :Invalid limit value\r\n";
+                            std::string error = ":ircserv 461 MODE :Invalid limit value\r\n";
                             send(client.getFd(), error.c_str(), error.length(), 0);
                             return;
                         }
@@ -463,17 +461,17 @@ void Command::MODE(const vector<string>& params, Client& client, Server& server)
 
             case 'o':
                 if (params.size() <= argIndex) {
-                    string error = ":ircserv 461 MODE :Missing nickname parameter for +o/-o\r\n";
+                    std::string error = ":ircserv 461 MODE :Missing nickname parameter for +o/-o\r\n";
                     send(client.getFd(), error.c_str(), error.length(), 0);
                     return;
                 }
 
                 {
-                    string targetNick = params[argIndex++];
+                    std::string targetNick = params[argIndex++];
                     Client* target = server.getClientByNickname(targetNick);
 
                     if (!target || !channel->hasClient(targetNick)) {
-                        string error = ":ircserv 441 " + targetNick + " " + channelName + " :They aren't on that channel\r\n";
+                        std::string error = ":ircserv 441 " + targetNick + " " + channelName + " :They aren't on that channel\r\n";
                         send(client.getFd(), error.c_str(), error.length(), 0);
                         return;
                     }
@@ -484,14 +482,14 @@ void Command::MODE(const vector<string>& params, Client& client, Server& server)
                         channel->removeOperator(target);
 
                     // Inform everyone about the operator change
-                    string opChange = ":" + client.getNickname() + " MODE " + channelName + " " + sign + "o " + targetNick + "\r\n";
-                    for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it)
+                    std::string opChange = ":" + client.getNickname() + " MODE " + channelName + " " + sign + "o " + targetNick + "\r\n";
+                    for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it)
                         send((*it)->getFd(), opChange.c_str(), opChange.length(), 0);
                 }
                 break;
 
             default:
-                string error = ":ircserv 472 ";
+                std::string error = ":ircserv 472 ";
                 error += mode;
                 error += " :is unknown mode char\r\n";
                 send(client.getFd(), error.c_str(), error.length(), 0);
@@ -502,20 +500,20 @@ void Command::MODE(const vector<string>& params, Client& client, Server& server)
     modesConfirmed += "\r\n";
 
     // Broadcast the overall mode change to all users in the channel
-    for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
+    for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
         send((*it)->getFd(), modesConfirmed.c_str(), modesConfirmed.length(), 0);
     }
 }
 
-void Command::PRIVMSG(const vector<string>& params, Client& client, Server& server) {
+void Command::PRIVMSG(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
-        cout << "Error: Not enough parameters for command PRIVMSG." << endl;
+        std::cout << "Error: Not enough parameters for command PRIVMSG." << std::endl;
         return;
     }
 
-    string target = params[0];
-    string message = params[1];
+    std::string target = params[0];
+    std::string message = params[1];
     for (size_t i = 2; i < params.size(); ++i) {
             message += " " + params[i];
     }
@@ -523,16 +521,16 @@ void Command::PRIVMSG(const vector<string>& params, Client& client, Server& serv
     if (target[0] == '#') {
         Channel* channel = server.getChannel(target);
         if (!channel) {
-            cout << "Error: No such channel " << target << "." << endl;
+            std::cout << "Error: No such channel " << target << "." << std::endl;
             return;
         }
         if (!channel->hasClient(client.getNickname())) {
-            cout << "Error: Cannot send to channel " << target << "." << endl;
+            std::cout << "Error: Cannot send to channel " << target << "." << std::endl;
             return;
         }
 
-        string privMsg = ":" + client.getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
-        for (set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
+        std::string privMsg = ":" + client.getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
+        for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
             if ((*it)->getNickname() != client.getNickname()) {
                 send((*it)->getFd(), privMsg.c_str(), privMsg.length(), 0);
             }
@@ -540,11 +538,11 @@ void Command::PRIVMSG(const vector<string>& params, Client& client, Server& serv
     } else {
         Client* targetClient = server.getClientByNickname(target);
         if (!targetClient) {
-            cout << "Error: No such nick " << target << "." << endl;
+            std::cout << "Error: No such nick " << target << "." << std::endl;
             return;
         }
 
-        string privMsg = ":" + client.getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
+        std::string privMsg = ":" + client.getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
         send(targetClient->getFd(), privMsg.c_str(), privMsg.length(), 0);
     }
 }

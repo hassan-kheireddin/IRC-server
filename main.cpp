@@ -6,10 +6,6 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
-
-
 int check_password(const char *pass)
 {
     while(*pass)
@@ -23,33 +19,33 @@ int check_password(const char *pass)
 }
 
 int main(int argc, char* argv[]) {
-    cout << argv[2] << endl;
+    std::cout << argv[2] << std::endl;
     
     if (argc != 3) {
-        cerr << "Usage: ./ircserv <port> <password>\n";
+        std::cerr << "Usage: ./ircserv <port> <password>\n";
         return 1;
     }
 
     int port = atoi(argv[1]);
     
     if (port <= 0 || port > 65535) {
-        cerr << "Invalid port number.\n";
+        std::cerr << "Invalid port number.\n";
         return 1;
     }
 
     if(!check_password(argv[2]))
     {
-        cerr << "Wrong password format!\n";
+        std::cerr << "Wrong password format!\n";
         return 1;
     }
     
-    string password = argv[2];
+    std::string password = argv[2];
     
     try {
         Server server(port, password);
         server.run();
-    } catch (const exception &e) {
-        cerr << "Server error: " << e.what() << "\n";
+    } catch (const std::exception &e) {
+        std::cerr << "Server error: " << e.what() << "\n";
     }
     
     return 0;
