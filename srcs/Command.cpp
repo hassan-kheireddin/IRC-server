@@ -61,9 +61,9 @@ void Command::AUTHENTICATE(Client& client, Server& server) {
 }
 
 void Command::PASS(const std::vector<std::string>& params, Client& client, Server& server) {
-    if (params.size() < 1)
+    if (params.size() != 1)
     {
-        std::string error = "Error: Not enough parameters for command PASS\r\n";
+        std::string error = "Error: Invalid parameters for command PASS\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -86,9 +86,9 @@ void Command::PASS(const std::vector<std::string>& params, Client& client, Serve
 }
 
 void Command::NICK(const std::vector<std::string>& params, Client& client, Server& server) {
-    if (params.size() < 1)
+    if (params.size() != 1)
     {
-        std::string error = "Error: Not enough parameters for command NICK\r\n";
+        std::string error = "Error: Invalid parameters for command NICK\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -141,9 +141,9 @@ bool Command::isValidNickname(const std::string& nickname) {
 
 void Command::USER(const std::vector<std::string>& params, Client& client, Server& server) {
     (void)server;
-    if (params.size() < 4)
+    if (params.size() != 4)
     {
-        std::string error = "Error: Not enough parameters for command USER\r\n";
+        std::string error = "Error: Invalid parameters for command USER\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -155,9 +155,9 @@ void Command::USER(const std::vector<std::string>& params, Client& client, Serve
 
 
 void Command::JOIN(const std::vector<std::string>& params, Client& client, Server& server) {
-    if (params.size() < 2)
+    if (params.size() < 1 || params.size() > 2)
     {
-        std::string error1 = "Error: Not enough parameters for command JOIN\r\n";
+        std::string error1 = "Error: Invalid parameters for command JOIN\r\n";
         send(client.getFd(), error1.c_str(), error1.length(), 0);
         return;
     }
@@ -168,7 +168,7 @@ void Command::JOIN(const std::vector<std::string>& params, Client& client, Serve
     }
 
     const std::string channelName = params[0];
-    const std::string channelKey = params[1];
+    const std::string channelKey = (params.size() >= 2) ? params[1] : "";
     if (channelName.empty() || channelName[0] != '#') {
         std::string error3 = "Error: Invalid channel name " + channelName + ".\r\n";
         send(client.getFd(), error3.c_str(), error3.length(), 0);
@@ -185,7 +185,7 @@ void Command::JOIN(const std::vector<std::string>& params, Client& client, Serve
     }
 
     if (channel->hasKey()) {
-        if (channelKey != channel->getKey()) {
+        if (channelKey.empty() || channelKey != channel->getKey()) {
             std::string error5 = "Error: Bad channel key for " + channelName + ". (+k)\r\n";
             send(client.getFd(), error5.c_str(), error5.length(), 0);
             return;
@@ -291,9 +291,9 @@ void Command::KICK(const std::vector<std::string>& params, Client& client, Serve
 
 
 void Command::INVITE(const std::vector<std::string>& params, Client& client, Server& server) {
-    if (params.size() < 2)
+    if (params.size() != 2)
     {
-        std::string error = "Error: Not enough parameters for command INVITE\r\n";
+        std::string error = "Error: Invalid parameters for command INVITE\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
         return;
     }
