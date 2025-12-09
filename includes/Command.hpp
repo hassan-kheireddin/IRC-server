@@ -21,6 +21,7 @@ class Command {
         static void TOPIC(const std::vector<std::string>& params, Client& client, Server& server);
         static void MODE(const std::vector<std::string>& params, Client& client, Server& server);
         static void PRIVMSG(const std::vector<std::string>& params, Client& client, Server& server);
+        static void NOTICE(const std::vector<std::string>& params, Client& client, Server& server);
 
     public:
         static void executeCommand(const std::string& commandLine, Client& client, Server& server);

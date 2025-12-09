@@ -4,12 +4,33 @@
 void Command::executeCommand(const std::string& commandLine, Client& client, Server& server) {
 
     std::vector<std::string> tokens;
-    size_t pos = 0, found;
-    while((found = commandLine.find_first_of(' ', pos)) != std::string::npos) {
+    size_t pos = 0;
+    
+    // Parse tokens, handling colon-prefixed trailing parameters
+    while (pos < commandLine.length()) {
+        // Skip leading spaces
+        while (pos < commandLine.length() && commandLine[pos] == ' ')
+            pos++;
+        
+        if (pos >= commandLine.length())
+            break;
+            
+        // Check for trailing parameter (starts with :)
+        if (commandLine[pos] == ':') {
+            tokens.push_back(commandLine.substr(pos + 1));
+            break;
+        }
+        
+        // Find next space
+        size_t found = commandLine.find(' ', pos);
+        if (found == std::string::npos) {
+            tokens.push_back(commandLine.substr(pos));
+            break;
+        }
+        
         tokens.push_back(commandLine.substr(pos, found - pos));
-        pos = found + 1;
+        pos = found;
     }
-    tokens.push_back(commandLine.substr(pos));
 
     if (tokens.empty()) return;
 
@@ -36,6 +57,8 @@ void Command::executeCommand(const std::string& commandLine, Client& client, Ser
         MODE(params, client, server);
     } else if (command == "PRIVMSG") {
         PRIVMSG(params, client, server);
+    } else if (command == "NOTICE") {
+        NOTICE(params, client, server);
     }
     else {
         std::string error = "Error: Unknown command " + command + ".\r\n";
@@ -577,5 +600,39 @@ void Command::PRIVMSG(const std::vector<std::string>& params, Client& client, Se
 
         std::string privMsg = ":" + client.getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
         send(targetClient->getFd(), privMsg.c_str(), privMsg.length(), 0);
+    }
+}
+
+void Command::NOTICE(const std::vector<std::string>& params, Client& client, Server& server) {
+    // NOTICE never sends error replies to avoid loops
+    if (params.size() < 2)
+        return;
+
+    std::string target = params[0];
+    std::string message = params[1];
+    for (size_t i = 2; i < params.size(); ++i) {
+        message += " " + params[i];
+    }
+
+    if (target[0] == '#') {
+        Channel* channel = server.getChannel(target);
+        if (!channel)
+            return;
+        if (!channel->hasClient(client.getNickname()))
+            return;
+
+        std::string noticeMsg = ":" + client.getNickname() + " NOTICE " + target + " :" + message + "\r\n";
+        for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it) {
+            if ((*it)->getNickname() != client.getNickname()) {
+                send((*it)->getFd(), noticeMsg.c_str(), noticeMsg.length(), 0);
+            }
+        }
+    } else {
+        Client* targetClient = server.getClientByNickname(target);
+        if (!targetClient)
+            return;
+
+        std::string noticeMsg = ":" + client.getNickname() + " NOTICE " + target + " :" + message + "\r\n";
+        send(targetClient->getFd(), noticeMsg.c_str(), noticeMsg.length(), 0);
     }
 }

@@ -19,8 +19,6 @@ int check_password(const char *pass)
 }
 
 int main(int argc, char* argv[]) {
-    std::cout << argv[2] << std::endl;
-    
     if (argc != 3) {
         std::cerr << "Usage: ./ircserv <port> <password>\n";
         return 1;
