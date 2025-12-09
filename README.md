@@ -1108,37 +1108,8 @@ Contributions are welcome! Please follow these guidelines:
 
 ---
 
-## 📄 License
-
-This project is part of the 42 school curriculum and is for educational purposes.
-
----
-
 ## 👥 Authors
 
 - **Hassan Kheireddin** - [@hassan-kheireddin](https://github.com/hassan-kheireddin)
 
 ---
-
-## 🙏 Acknowledgments
-
-- 42 Network for the project specification
-- IRC protocol designers (RFC 1459, RFC 2812)
-- The IRC community for decades of real-time communication
-
----
-
-## 📞 Support
-
-For questions or issues:
-- Open an issue on GitHub
-- Check [TESTING.md](TESTING.md) for troubleshooting
-- Review IRC protocol documentation
-
----
-
-**Last Updated**: December 3, 2025
-
-**Version**: 1.0.0
-
-**Status**: ✅ Complete and functional
