@@ -451,7 +451,7 @@ void Command::TOPIC(const std::vector<std::string>& params, Client& client, Serv
 }
 
 void Command::MODE(const std::vector<std::string>& params, Client& client, Server& server) {
-    if (params.size() < 2)
+    if (params.size() < 1)
     {
         std::string error = "Error: Not enough parameters for command MODE\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
@@ -459,7 +459,6 @@ void Command::MODE(const std::vector<std::string>& params, Client& client, Serve
     }
 
     std::string channelName = params[0];
-    std::string modeChanges = params[1];
 
     Channel* channel = server.getChannel(channelName);
 
@@ -468,6 +467,20 @@ void Command::MODE(const std::vector<std::string>& params, Client& client, Serve
         send(client.getFd(), error.c_str(), error.length(), 0);
         return;
     }
+
+    // If only channel name provided, display current modes (RPL_CHANNELMODEIS = 324)
+    if (params.size() == 1) {
+        std::string modes = channel->getModes();
+        std::string modeStr = "+";
+        if (!modes.empty()) {
+            modeStr += modes;
+        }
+        std::string response = ":ircserv 324 " + client.getNickname() + " " + channelName + " " + modeStr + "\r\n";
+        send(client.getFd(), response.c_str(), response.length(), 0);
+        return;
+    }
+
+    std::string modeChanges = params[1];
 
     if (!channel->isOperator(client.getNickname())) {
         std::string error = "Error: You need channel operator privileges\r\n";
