@@ -231,7 +231,7 @@ void Command::JOIN(const std::vector<std::string>& params, Client& client, Serve
         return;
     }
 
-    if (channel->hasKey()) {
+    if (channel->hasMode('k')) {
         if (channelKey.empty() || channelKey != channel->getKey()) {
             std::string error5 = "Error: Bad channel key for " + channelName + ". (+k)\r\n";
             send(client.getFd(), error5.c_str(), error5.length(), 0);
@@ -250,22 +250,30 @@ void Command::JOIN(const std::vector<std::string>& params, Client& client, Serve
     if (!channel->hasClient(client.getNickname())){
         channel->addClient(&client);
 
-        if (channel->getClients().size() == 1)
+        if (channel->getClients().size() == 1) {
             channel->setOperator(client.getNickname());
+            // If creating channel with a password, set it and enable +k mode
+            if (!channelKey.empty()) {
+                channel->setKey(channelKey);
+                channel->addMode('k');
+            }
+        }
+        
+        // Remove invitation only after successful join
+        channel->removeInvitation(&client);
     }
-
-    channel->removeInvitation(&client);
 
     std::string joinMsg = ":" + client.getNickname() + " JOIN " + channelName + "\r\n";
     for (std::set<Client*>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it){
         send((*it)->getFd(), joinMsg.c_str(), joinMsg.length(), 0);
     }
 
+    // Send topic to joining user (RPL_TOPIC = 332, RPL_NOTOPIC = 331)
     if (!channel->getTopic().empty()) {
-        std::string topicMsg = client.getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
+        std::string topicMsg = ":ircserv 332 " + client.getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n";
         send(client.getFd(), topicMsg.c_str(), topicMsg.length(), 0);
     } else {
-        std::string noTopicMsg = client.getNickname() + " " + channelName + " :No topic is set\r\n";
+        std::string noTopicMsg = ":ircserv 331 " + client.getNickname() + " " + channelName + " :No topic is set\r\n";
         send(client.getFd(), noTopicMsg.c_str(), noTopicMsg.length(), 0);
     }
 
@@ -490,10 +498,26 @@ void Command::MODE(const std::vector<std::string>& params, Client& client, Serve
                 break;
 
             case 't':
-                if (sign == '+')
+                if (sign == '+') {
                     channel->addMode('t');
-                else
+                    // If topic parameter is provided with +t, set the topic
+                    if (params.size() > argIndex) {
+                        std::string topic = params[argIndex];
+                        // Combine remaining parameters as topic (in case of multi-word topic)
+                        for (size_t j = argIndex + 1; j < params.size(); ++j) {
+                            topic += " " + params[j];
+                        }
+                        // Remove leading ':' if present
+                        if (!topic.empty() && topic[0] == ':')
+                            topic = topic.substr(1);
+                        channel->setTopic(topic);
+                        argIndex = params.size(); // Consume all remaining params
+                    }
+                } else {
                     channel->removeMode('t');
+                    // MODE -t deletes the topic
+                    channel->setTopic("");
+                }
                 break;
 
             case 'k':
@@ -504,8 +528,10 @@ void Command::MODE(const std::vector<std::string>& params, Client& client, Serve
                         return;
                     }
                     channel->setKey(params[argIndex++]);
+                    channel->addMode('k');
                 } else {
                     channel->removeKey();
+                    channel->removeMode('k');
                 }
                 break;
 

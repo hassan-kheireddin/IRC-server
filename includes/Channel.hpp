@@ -27,26 +27,19 @@ class Channel {
         void setTopic(const std::string& topic);
 
         void addClient(Client* client);
-        void removeClient(Client* client);
         void removeClient(const std::string& nickname);
-        bool hasClient(Client* client) const;
         bool hasClient(const std::string& nickname) const;
 
-        void setOperator(Client* client);
         void setOperator(const std::string& nickname);
         const std::string& getOperator() const;
         bool isOperator(Client* client) const;
-        bool isOperator(const std::string& nickname) const;
+
         void removeOperator(Client* client);
 
-        void inviteClient(Client* client);
         bool isInviteOnly() const;
         void addInvitation(Client* client);
-        void addInvitation(const std::string& nickname);
         void removeInvitation(Client* client);
-        void removeInvitation(const std::string& nickname);
         bool isInvited(Client* client) const;
-        bool isInvited(const std::string& nickname) const;
 
         const std::set<Client*>& getClients() const;
 
@@ -55,7 +48,7 @@ class Channel {
         void removeMode(char mode);
         bool hasMode(char mode) const;
         std::string getModes() const;
-
+        bool isOperator(const std::string& nickname) const;
         void setKey(const std::string& key);
         const std::string& getKey() const;
         void removeKey();
