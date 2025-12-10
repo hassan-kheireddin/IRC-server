@@ -5,6 +5,19 @@
 #include "includes/Command.hpp"
 #include <string>
 #include <vector>
+#include <csignal>
+
+Server* g_server = NULL;
+
+void signalHandler(int signal) {
+    (void)signal;
+    std::cout << "\nShutting down server...\n";
+    if (g_server) {
+        delete g_server;
+        g_server = NULL;
+    }
+    exit(0);
+}
 
 int check_password(const char *pass)
 {
@@ -39,11 +52,18 @@ int main(int argc, char* argv[]) {
     
     std::string password = argv[2];
     
+    // Register signal handler for Ctrl+C
+    signal(SIGINT, signalHandler);
+    
     try {
-        Server server(port, password);
-        server.run();
+        g_server = new Server(port, password);
+        g_server->run();
     } catch (const std::exception &e) {
         std::cerr << "Server error: " << e.what() << "\n";
+        if (g_server) {
+            delete g_server;
+            g_server = NULL;
+        }
     }
     
     return 0;
