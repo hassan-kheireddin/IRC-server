@@ -91,6 +91,12 @@ void Command::PASS(const std::vector<std::string>& params, Client& client, Serve
         return;
     }
 
+    if (client.hasSentNick() || client.hasSentUser()) {
+        std::string error = "Error: PASS must be sent before NICK and USER commands\r\n";
+        send(client.getFd(), error.c_str(), error.length(), 0);
+        return;
+    }
+
     if (client.isReg()) {
         std::string error = "Error: You are already registered\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
@@ -112,6 +118,12 @@ void Command::NICK(const std::vector<std::string>& params, Client& client, Serve
     if (params.size() != 1)
     {
         std::string error = "Error: Invalid parameters for command NICK\r\n";
+        send(client.getFd(), error.c_str(), error.length(), 0);
+        return;
+    }
+
+    if (!client.hasSentPass()) {
+        std::string error = "Error: You must send PASS command first\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -167,6 +179,18 @@ void Command::USER(const std::vector<std::string>& params, Client& client, Serve
     if (params.size() != 4)
     {
         std::string error = "Error: Invalid parameters for command USER\r\n";
+        send(client.getFd(), error.c_str(), error.length(), 0);
+        return;
+    }
+
+    if (!client.hasSentPass()) {
+        std::string error = "Error: You must send PASS command first\r\n";
+        send(client.getFd(), error.c_str(), error.length(), 0);
+        return;
+    }
+
+    if (!client.hasSentNick()) {
+        std::string error = "Error: You must send NICK command before USER\r\n";
         send(client.getFd(), error.c_str(), error.length(), 0);
         return;
     }
