@@ -125,9 +125,64 @@ void Server::handleClientData(int clientFd) //processes data received from a cli
     if (bytes <= 0) {
         std::cout << "Client disconnected: " << clientFd << "\n";
     
-        // Cleanup nickname if set
         Client* client = _clients[clientFd];
         std::string nick = client->getNickname();
+        
+        // Remove client from all channels and handle operator-less channels
+        std::vector<std::string> channelsToDelete;
+        for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+            Channel* channel = it->second;
+            if (channel->hasClient(nick)) {
+                bool wasOperator = channel->isOperator(nick);
+                
+                // Notify other clients in the channel about the quit
+                std::string quitMsg = ":" + nick + " QUIT :Client disconnected\r\n";
+                for (std::set<Client*>::iterator clientIt = channel->getClients().begin(); 
+                     clientIt != channel->getClients().end(); ++clientIt) {
+                    if ((*clientIt)->getSocketFd() != clientFd) {
+                        send((*clientIt)->getSocketFd(), quitMsg.c_str(), quitMsg.length(), 0);
+                    }
+                }
+                
+                // Remove client from channel
+                channel->removeClient(nick);
+                
+                // Check if channel should be deleted
+                if (channel->getClients().empty()) {
+                    // Channel is now empty, delete it
+                    channelsToDelete.push_back(it->first);
+                } else if (wasOperator) {
+                    // Check if there are any operators left
+                    bool hasOperator = false;
+                    for (std::set<Client*>::iterator clientIt = channel->getClients().begin(); 
+                         clientIt != channel->getClients().end(); ++clientIt) {
+                        if (channel->isOperator(*clientIt)) {
+                            hasOperator = true;
+                            break;
+                        }
+                    }
+                    
+                    // If no operators left, delete channel and notify all clients
+                    if (!hasOperator) {
+                        std::string deleteMsg = ":ircserv NOTICE " + channel->getName() + " :Channel closing - no operators remaining\r\n";
+                        for (std::set<Client*>::iterator clientIt = channel->getClients().begin(); 
+                             clientIt != channel->getClients().end(); ++clientIt) {
+                            send((*clientIt)->getSocketFd(), deleteMsg.c_str(), deleteMsg.length(), 0);
+                        }
+                        channelsToDelete.push_back(it->first);
+                    }
+                }
+            }
+        }
+        
+        // Delete marked channels
+        for (size_t i = 0; i < channelsToDelete.size(); ++i) {
+            delete _channels[channelsToDelete[i]];
+            _channels.erase(channelsToDelete[i]);
+            std::cout << "Channel " << channelsToDelete[i] << " deleted (no operators)\n";
+        }
+        
+        // Cleanup nickname if set
         if (!nick.empty())
             manageNickname(nick, NULL, UNREGISTER);
     

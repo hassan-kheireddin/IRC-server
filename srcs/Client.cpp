@@ -9,11 +9,6 @@ int Client::getSocketFd() const
     return _socketFd;
 }
 
-int Client::getFd() const
-{
-    return _socketFd;
-}
-
 const std::string& Client::getNickname() const
 {
     return _nickname;

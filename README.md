@@ -686,7 +686,7 @@ string msg = ":alice PRIVMSG #test :Hello!";
 for (iterator it = channel->getClients().begin(); 
      it != channel->getClients().end(); ++it) {
     if ((*it)->getNickname() != "alice") { // Don't echo to sender
-        send((*it)->getFd(), msg.c_str(), msg.length(), 0);
+        send((*it)->getSocketFd(), msg.c_str(), msg.length(), 0);
     }
 }
 ```
