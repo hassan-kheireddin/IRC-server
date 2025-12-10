@@ -65,6 +65,7 @@ void Server::setupServerSocket() // handles the creation and configuration of th
     pollfd pfd;
     pfd.fd = _serverSocket;
     pfd.events = POLLIN;
+    pfd.revents = 0;
     _pollFds.push_back(pfd);
 
     std::cout << " Server is up and running on port " << _port << std::endl;
@@ -106,6 +107,7 @@ void Server::acceptNewConnection() //accepting new client connections
     pollfd clientPoll;
     clientPoll.fd = clientFd;
     clientPoll.events = POLLIN;
+    clientPoll.revents = 0;
     _pollFds.push_back(clientPoll);
 
     std::string ip = inet_ntoa(clientAddr.sin_addr); // converts the client's IP address to a human-readable string
