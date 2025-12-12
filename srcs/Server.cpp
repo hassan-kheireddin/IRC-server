@@ -124,7 +124,7 @@ void Server::handleClientData(int clientFd) //processes data received from a cli
 
     if (bytes <= 0) {
         std::cout << "Client disconnected: " << clientFd << "\n";
-    
+        
         Client* client = _clients[clientFd];
         std::string nick = client->getNickname();
         

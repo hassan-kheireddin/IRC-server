@@ -67,7 +67,7 @@ void Command::executeCommand(const std::string& commandLine, Client& client, Ser
         NOTICE(params, client, server);
     }
     else {
-        std::string error = "Error: Unknown command " + command + ".\r\n";
+        std::string error = ":ircserv 421 * " + command + " :Unknown command\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
     }
 }
@@ -75,7 +75,7 @@ void Command::executeCommand(const std::string& commandLine, Client& client, Ser
 void Command::AUTHENTICATE(Client& client, Server& server) {
         (void)server;
         if (client.isAuth()) {
-            std::string error = "Error: You are already authenticated.\r\n";
+            std::string error = ":ircserv 462 " + client.getNickname() + " :You may not reregister\r\n";
             send(client.getSocketFd(), error.c_str(), error.length(), 0);
             return;
         }
@@ -84,7 +84,7 @@ void Command::AUTHENTICATE(Client& client, Server& server) {
             std::string msg = client.getNickname() + ", You have been successfully authenticated!\r\n";
             send(client.getSocketFd(), msg.c_str(), msg.length(), 0);
         } else {
-            std::string error = "Error: Authentication incomplete. You must send PASS, NICK, and USER commands first.\r\n";
+            std::string error = ":ircserv 451 * :You have not registered\r\n";
             send(client.getSocketFd(), error.c_str(), error.length(), 0);
         }
 }
@@ -92,19 +92,19 @@ void Command::AUTHENTICATE(Client& client, Server& server) {
 void Command::PASS(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() != 1)
     {
-        std::string error = "Error: Invalid parameters for command PASS\r\n";
+        std::string error = ":ircserv 461 * PASS :Not enough parameters\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
 
     if (client.hasSentNick() || client.hasSentUser()) {
-        std::string error = "Error: PASS must be sent before NICK and USER commands\r\n";
+        std::string error = ":ircserv 462 * :PASS must be sent before NICK and USER\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
 
     if (client.isReg()) {
-        std::string error = "Error: You are already registered\r\n";
+        std::string error = ":ircserv 462 * :You may not reregister\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -115,7 +115,7 @@ void Command::PASS(const std::vector<std::string>& params, Client& client, Serve
         std::string msg = "Welcome to the server! You must authenticate to join channels.\r\n";
         send(client.getSocketFd(), msg.c_str(), msg.length(), 0);
     } else {
-        std::string error = "Error: Password incorrect\r\n";
+        std::string error = ":ircserv 464 * :Password incorrect\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
     }
 }
@@ -123,13 +123,13 @@ void Command::PASS(const std::vector<std::string>& params, Client& client, Serve
 void Command::NICK(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() != 1)
     {
-        std::string error = "Error: Invalid parameters for command NICK\r\n";
+        std::string error = ":ircserv 431 * :No nickname given\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
 
     if (!client.hasSentPass()) {
-        std::string error = "Error: You must send PASS command first\r\n";
+        std::string error = ":ircserv 451 * :You must send PASS first\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -137,19 +137,19 @@ void Command::NICK(const std::vector<std::string>& params, Client& client, Serve
     std::string nickname = params[0];
 
     if (nickname.empty()) {
-        std::string error = "Error: No nickname given\r\n";
+        std::string error = ":ircserv 431 * :No nickname given\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
 
     if (!isValidNickname(nickname)) {
-        std::string error = "Error: Erroneous nickname " + nickname + ".\r\n";
+        std::string error = ":ircserv 432 * " + nickname + " :Erroneous nickname\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
 
     if (server.manageNickname(nickname, NULL, CHECK)) {
-        std::string error = "Error: Nickname " + nickname + " is already in use.\r\n";
+        std::string error = ":ircserv 433 * " + nickname + " :Nickname is already in use\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -184,19 +184,19 @@ void Command::USER(const std::vector<std::string>& params, Client& client, Serve
     (void)server;
     if (params.size() != 4)
     {
-        std::string error = "Error: Invalid parameters for command USER\r\n";
+        std::string error = ":ircserv 461 * USER :Not enough parameters\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
 
     if (!client.hasSentPass()) {
-        std::string error = "Error: You must send PASS command first\r\n";
+        std::string error = ":ircserv 451 * :You must send PASS first\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
 
     if (!client.hasSentNick()) {
-        std::string error = "Error: You must send NICK command before USER\r\n";
+        std::string error = ":ircserv 451 * :You must send NICK before USER\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -210,12 +210,12 @@ void Command::USER(const std::vector<std::string>& params, Client& client, Serve
 void Command::JOIN(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() < 1 || params.size() > 2)
     {
-        std::string error1 = "Error: Invalid parameters for command JOIN\r\n";
+        std::string error1 = ":ircserv 461 " + client.getNickname() + " JOIN :Not enough parameters\r\n";
         send(client.getSocketFd(), error1.c_str(), error1.length(), 0);
         return;
     }
     if (!client.isAuth()) {
-        std::string error2 = "Error: Client not authenticated\r\n";
+        std::string error2 = ":ircserv 451 " + client.getNickname() + " :You have not registered\r\n";
         send(client.getSocketFd(), error2.c_str(), error2.length(), 0);
         return;
     }
@@ -223,7 +223,7 @@ void Command::JOIN(const std::vector<std::string>& params, Client& client, Serve
     const std::string channelName = params[0];
     const std::string channelKey = (params.size() >= 2) ? params[1] : "";
     if (channelName.empty() || channelName[0] != '#') {
-        std::string error3 = "Error: Invalid channel name " + channelName + ".\r\n";
+        std::string error3 = ":ircserv 403 " + client.getNickname() + " " + channelName + " :No such channel\r\n";
         send(client.getSocketFd(), error3.c_str(), error3.length(), 0);
         return;
     }
@@ -232,14 +232,14 @@ void Command::JOIN(const std::vector<std::string>& params, Client& client, Serve
 
 
     if (channel->isInviteOnly() && !channel->isInvited(&client)) {
-        std::string error4 = "Error: Channel " + channelName + " is invite-only. (+i)\r\n";
+        std::string error4 = ":ircserv 473 " + client.getNickname() + " " + channelName + " :Cannot join channel (+i)\r\n";
         send(client.getSocketFd(), error4.c_str(), error4.length(), 0);
         return;
     }
 
     if (channel->hasMode('k')) {
         if (channelKey.empty() || channelKey != channel->getKey()) {
-            std::string error5 = "Error: Bad channel key for " + channelName + ". (+k)\r\n";
+            std::string error5 = ":ircserv 475 " + client.getNickname() + " " + channelName + " :Cannot join channel (+k)\r\n";
             send(client.getSocketFd(), error5.c_str(), error5.length(), 0);
             return;
         }
@@ -247,7 +247,7 @@ void Command::JOIN(const std::vector<std::string>& params, Client& client, Serve
 
     if (channel->hasClientLimit()) {
         if (channel->isFull()) {
-            std::string error6 = "Error: Channel " + channelName + " is full. (+l)\r\n";
+            std::string error6 = ":ircserv 471 " + client.getNickname() + " " + channelName + " :Cannot join channel (+l)\r\n";
             send(client.getSocketFd(), error6.c_str(), error6.length(), 0);
             return;
         }
@@ -298,7 +298,7 @@ void Command::JOIN(const std::vector<std::string>& params, Client& client, Serve
 void Command::KICK(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() < 2)
     {
-        std::string error = "Error: Not enough parameters for command KICK\r\n";
+        std::string error = ":ircserv 461 " + client.getNickname() + " KICK :Not enough parameters\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -321,20 +321,20 @@ void Command::KICK(const std::vector<std::string>& params, Client& client, Serve
 
     Channel* channel = server.getChannel(channelName);
     if (!channel) {
-        std::string error = "Error: No such channel " + channelName + "\r\n";
+        std::string error = ":ircserv 403 " + client.getNickname() + " " + channelName + " :No such channel\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
 
     }
     if (!channel->isOperator(client.getNickname())) {
-        std::string error = "Error: You need channel operator privileges\r\n";
+        std::string error = ":ircserv 482 " + client.getNickname() + " " + channelName + " :You're not channel operator\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
     
     // Operator cannot kick themselves
     if (targetNickname == client.getNickname()) {
-        std::string error = "Error: You cannot kick yourself\r\n";
+        std::string error = ":ircserv 484 " + client.getNickname() + " " + channelName + " :You cannot kick yourself\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -342,7 +342,7 @@ void Command::KICK(const std::vector<std::string>& params, Client& client, Serve
     Client* targetClient = server.getClientByNickname(targetNickname);
 
     if (!targetClient || !channel->hasClient(targetNickname)) {
-        std::string error = "Error: " + targetNickname + " is not in channel " + channelName + "\r\n";
+        std::string error = ":ircserv 441 " + client.getNickname() + " " + targetNickname + " " + channelName + " :They aren't on that channel\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -362,7 +362,7 @@ void Command::KICK(const std::vector<std::string>& params, Client& client, Serve
 void Command::INVITE(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() != 2)
     {
-        std::string error = "Error: Invalid parameters for command INVITE\r\n";
+        std::string error = ":ircserv 461 " + client.getNickname() + " INVITE :Not enough parameters\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -371,30 +371,30 @@ void Command::INVITE(const std::vector<std::string>& params, Client& client, Ser
 
     Channel* channel = server.getChannel(channelName);
     if (!channel) {
-        std::string error = "Error: No such channel " + channelName + "\r\n";
+        std::string error = ":ircserv 403 " + client.getNickname() + " " + channelName + " :No such channel\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
     if (!channel->isOperator(client.getNickname())) {
-        std::string error = "Error: You need channel operator privileges\r\n";
+        std::string error = ":ircserv 482 " + client.getNickname() + " " + channelName + " :You're not channel operator\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
     Client* targetClient = server.getClientByNickname(targetNickname);
     if (!targetClient) {
-        std::string error = "Error: No such nick " + targetNickname + "\r\n";
+        std::string error = ":ircserv 401 " + client.getNickname() + " " + targetNickname + " :No such nick/channel\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
 
     if (channel->hasClient(targetNickname)) {
-        std::string error = "Error: " + targetNickname + " is already on channel " + channelName + "\r\n";
+        std::string error = ":ircserv 443 " + client.getNickname() + " " + targetNickname + " " + channelName + " :is already on channel\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
 
     if (channel->isInvited(targetClient)) {
-        std::string error = "Error: " + targetNickname + " is already invited to " + channelName + "\r\n";
+        std::string error = ":ircserv 443 " + client.getNickname() + " " + targetNickname + " " + channelName + " :is already invited\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -408,7 +408,7 @@ void Command::INVITE(const std::vector<std::string>& params, Client& client, Ser
 void Command::TOPIC(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() < 1)
     {
-        std::string error = "Error: Not enough parameters for command TOPIC\r\n";
+        std::string error = ":ircserv 461 " + client.getNickname() + " TOPIC :Not enough parameters\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -417,13 +417,13 @@ void Command::TOPIC(const std::vector<std::string>& params, Client& client, Serv
 
     Channel* channel = server.getChannel(channelName);
     if (!channel) {
-        std::string error = "Error: No such channel " + channelName + "\r\n";
+        std::string error = ":ircserv 403 " + client.getNickname() + " " + channelName + " :No such channel\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
 
     if (!channel->hasClient(client.getNickname())) {
-        std::string error = "Error: You are not in channel " + channelName + "\r\n";
+        std::string error = ":ircserv 442 " + client.getNickname() + " " + channelName + " :You're not on that channel\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -467,7 +467,7 @@ void Command::TOPIC(const std::vector<std::string>& params, Client& client, Serv
 void Command::MODE(const std::vector<std::string>& params, Client& client, Server& server) {
     if (params.size() < 1)
     {
-        std::string error = "Error: Not enough parameters for command MODE\r\n";
+        std::string error = ":ircserv 461 " + client.getNickname() + " MODE :Not enough parameters\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -477,7 +477,7 @@ void Command::MODE(const std::vector<std::string>& params, Client& client, Serve
     Channel* channel = server.getChannel(channelName);
 
     if (!channel) {
-        std::string error = "Error: No such channel " + channelName + "\r\n";
+        std::string error = ":ircserv 403 " + client.getNickname() + " " + channelName + " :No such channel\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -497,7 +497,7 @@ void Command::MODE(const std::vector<std::string>& params, Client& client, Serve
     std::string modeChanges = params[1];
 
     if (!channel->isOperator(client.getNickname())) {
-        std::string error = "Error: You need channel operator privileges\r\n";
+        std::string error = ":ircserv 482 " + client.getNickname() + " " + channelName + " :You're not channel operator\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -607,7 +607,7 @@ void Command::MODE(const std::vector<std::string>& params, Client& client, Serve
 
                    // Operat or cannot remove their own operator status with -o
                     if (sign == '-' && targetNick == client.getNickname()) {
-                        std::string error = "Error: You cannot remove your own operator status\r\n";
+                        std::string error = ":ircserv 484 " + client.getNickname() + " " + channelName + " :You cannot remove your own operator status\r\n";
                         send(client.getSocketFd(), error.c_str(), error.length(), 0);
                         return;
                     }
@@ -642,9 +642,16 @@ void Command::MODE(const std::vector<std::string>& params, Client& client, Serve
 }
 
 void Command::PRIVMSG(const std::vector<std::string>& params, Client& client, Server& server) {
+    if (params.size() < 1)
+    {
+        std::string error = ":ircserv 411 " + client.getNickname() + " :No recipient given (PRIVMSG)\r\n";
+        send(client.getSocketFd(), error.c_str(), error.length(), 0);
+        return;
+    }
+    
     if (params.size() < 2)
     {
-        std::string error = "Error: Not enough parameters for command PRIVMSG\r\n";
+        std::string error = ":ircserv 412 " + client.getNickname() + " :No text to send\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
@@ -658,12 +665,12 @@ void Command::PRIVMSG(const std::vector<std::string>& params, Client& client, Se
     if (target[0] == '#') {
         Channel* channel = server.getChannel(target);
         if (!channel) {
-            std::string error = "Error: No such channel " + target + "\r\n";
+            std::string error = ":ircserv 403 " + client.getNickname() + " " + target + " :No such channel\r\n";
             send(client.getSocketFd(), error.c_str(), error.length(), 0);
             return;
         }
         if (!channel->hasClient(client.getNickname())) {
-            std::string error = "Error: Cannot send to channel " + target + "\r\n";
+            std::string error = ":ircserv 404 " + client.getNickname() + " " + target + " :Cannot send to channel\r\n";
             send(client.getSocketFd(), error.c_str(), error.length(), 0);
             return;
         }
@@ -677,7 +684,7 @@ void Command::PRIVMSG(const std::vector<std::string>& params, Client& client, Se
     } else {
         Client* targetClient = server.getClientByNickname(target);
         if (!targetClient) {
-            std::string error = "Error: No such nick " + target + "\r\n";
+            std::string error = ":ircserv 401 " + client.getNickname() + " " + target + " :No such nick/channel\r\n";
             send(client.getSocketFd(), error.c_str(), error.length(), 0);
             return;
         }
