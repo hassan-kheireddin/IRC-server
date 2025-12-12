@@ -96,18 +96,20 @@ void Command::PASS(const std::vector<std::string>& params, Client& client, Serve
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
-
+    
+    if (client.isReg()) {
+        std::string error = ":ircserv 462 * :You may not reregister\r\n";
+        send(client.getSocketFd(), error.c_str(), error.length(), 0);
+        return;
+    }
+    
     if (client.hasSentNick() || client.hasSentUser()) {
         std::string error = ":ircserv 462 * :PASS must be sent before NICK and USER\r\n";
         send(client.getSocketFd(), error.c_str(), error.length(), 0);
         return;
     }
 
-    if (client.isReg()) {
-        std::string error = ":ircserv 462 * :You may not reregister\r\n";
-        send(client.getSocketFd(), error.c_str(), error.length(), 0);
-        return;
-    }
+
 
     if (params[0] == server.getPassword()) {
         client.setReg(true);
